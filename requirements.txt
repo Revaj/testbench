@@ -1,0 +1,4 @@
+# Receta: solo estas tres (Python 3.11). Versiones exactas se fijan al medir.
+numpy
+pandas
+scikit-learn>=1.4
