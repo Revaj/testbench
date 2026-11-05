@@ -206,8 +206,10 @@ def verify(name, df, split_df, schema, meta):
             issues.append(f"falta partición {key}")
             continue
         tr, te = int(got.loc[key].get("TRAIN", 0)), int(got.loc[key].get("TEST", 0))
-        if (tr, te) != (int(r.num_instances_train), int(r.num_instances_test)):
-            issues.append(f"partición {key}: train/test {tr}/{te} != {int(r.num_instances_train)}/{int(r.num_instances_test)}")
+        # la metadata guarda el tamaño PROMEDIO por fold (p. ej. 598.67): el real debe quedar a < 1 fila
+        mtr, mte = float(r.num_instances_train), float(r.num_instances_test)
+        if abs(tr - mtr) >= 1 or abs(te - mte) >= 1:
+            issues.append(f"partición {key}: train/test {tr}/{te} lejos del promedio {mtr:.2f}/{mte:.2f}")
     return issues
 
 

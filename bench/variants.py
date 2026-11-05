@@ -10,11 +10,16 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "recipe"))
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 import logistic_smote  # noqa: E402
 import mlp_vos  # noqa: E402
 import stacking  # noqa: E402
 
+import baselines  # noqa: E402  (referencias, no recetas)
+
 VARIANTS = {
+    "RF": lambda: baselines.DefaultRF(),                 # referencia: ancla del Elo de TabArena
+    "R0": lambda: baselines.original(),                 # referencia: la receta original
     "R1": lambda: stacking.build_model("R1"),            # receta de stacking
     "R1-AVG": lambda: stacking.build_model("R1-AVG"),    # mismas 3 bases, promedio simple
     "R2": lambda: stacking.build_model("R1", extra_bases={"mlp": mlp_vos.MLPBase(use_vos=False)}),

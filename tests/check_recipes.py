@@ -22,7 +22,7 @@ from sklearn.model_selection import train_test_split
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "bench"))
 from variants import VARIANTS  # noqa: E402
 
-ALL = list(VARIANTS)
+ALL = [v for v in VARIANTS if v not in ("RF", "R0")]  # RF y R0 son referencias, no recetas
 
 
 def check(model, Xte, k):
