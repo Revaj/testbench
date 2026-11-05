@@ -150,7 +150,7 @@ legacy/
 
 ## 11. Pasos (checklist)
 
-- [ ] 1. Javier crea el repo en GitHub y pasa owner/nombre. Claude lo conecta y sube el esqueleto + este PLAN.md + `legacy/`.
+- [x] 1. Javier crea el repo en GitHub y pasa owner/nombre. Claude lo conecta y sube el esqueleto + este PLAN.md + `legacy/`.
 - [ ] 2. Conseguir la lista de tareas de clasificación de TabArena-v0.1 (metadata pública) y los datos (§4). Verificar huellas.
 - [ ] 3. `splits.py` + `run.py` + `aggregate.py`; probar con RF y R0 en 2–3 datasets.
 - [ ] 4. Implementar R1 (3 bases + meta OOF) y R1-AVG. Elegir la base "pequeña" **solo** con el banco de desarrollo.
@@ -164,6 +164,7 @@ legacy/
 
 - 2026-11-05: Iteración anterior hecha (mezcla aprendida con holdout/OOF; banco PMLB sesgado). Resultados en `banco_de_prueba.zip`, enviado a Javier: va a `legacy/banco_desarrollo/`. La receta de esa iteración (`submission.py` entregado ese día) va a `legacy/submission_iter1.py`.
 - 2026-11-05: Plan aprobado por Javier: MLP-VOS sí; TabArena-v0.1 clasificación; protocolo replicado a mano; datos por buscar; repo lo crea Javier.
+- 2026-11-05: Repo `Revaj/testbench` creado; esqueleto subido (paso 1). Siguiente: paso 2 (lista de tareas de clasificación de TabArena-v0.1 y datos).
 
 ## Fuentes
 
