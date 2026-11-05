@@ -166,6 +166,7 @@ legacy/
 - 2026-11-05: Plan aprobado por Javier: MLP-VOS sí; TabArena-v0.1 clasificación; protocolo replicado a mano; datos por buscar; repo lo crea Javier.
 - 2026-11-05: Repo `Revaj/testbench` creado; esqueleto subido (paso 1). Siguiente: paso 2 (lista de tareas de clasificación de TabArena-v0.1 y datos).
 - 2026-11-05: Lista oficial obtenida de github.com/autogluon/tabarena (Apache-2.0, commit 1fa0a62), archivo `packages/tabarena/src/tabarena/benchmark/task/metadata/sources/data/TabArena-v0.1_tasks_metadata.csv`. Clasificación = **38 datasets: 30 binarios (métrica roc_auc) y 8 multiclase (log_loss)**, task IDs de OpenML 363613–363712; <2,500 filas → 30 splits (10×3), resto → 9 (3×3). Copia resumida en `bench/tabarena_v0.1_clasificacion.csv`. Coincide exactamente con los 38 del reto del curso (30 bin + 8 multi con 3/5/8 clases, 4–1,776 columnas): **hipótesis no verificada** de que son los mismos datasets; la candidata para dataset_37 (3 clases, AUC 0.49) sería hiva_agnostic (3 clases, 1,617 columnas, clase minoritaria 1.1 %). Los splits oficiales son los de cada task de OpenML: se usarán esos en vez de replicarlos. Siguiente: descargar datos+splits desde la máquina de Javier (OpenML da 403 desde el sandbox).
+- 2026-11-05: `bench/fetch_data.py` escrito (solo urllib + pandas; parser ARFF propio probado con datos simulados, no con OpenML real porque el sandbox no llega). Siguiente: Javier lo corre, revisa que salga 38/38 verificados y sube `data/manifest.json` como `bench/data_manifest.json` (los datos no van al repo).
 
 ## Fuentes
 

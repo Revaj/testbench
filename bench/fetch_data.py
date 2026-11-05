@@ -1,0 +1,229 @@
+"""Descarga los 38 datasets de clasificación de TabArena-v0.1 y sus particiones oficiales desde OpenML.
+
+Uso (en una máquina con acceso a openml.org):
+    python bench/fetch_data.py                  # todos
+    python bench/fetch_data.py credit-g splice  # solo algunos (por dataset_name)
+
+Requisitos: Python 3.11, numpy y pandas. Sin el paquete `openml` ni `tabarena`:
+usa solo la API REST pública de OpenML (JSON + ARFF) con urllib.
+
+Salida (carpeta data/, ignorada por git):
+    data/<dataset_name>/data.csv.gz    todas las columnas (features + target), faltantes vacíos
+    data/<dataset_name>/schema.json    orden y tipo de columnas, categorías, target, task/dataset id
+    data/<dataset_name>/splits.csv.gz  particiones oficiales: type (TRAIN/TEST), rowid, repeat, fold
+    data/manifest.json                 md5 y verificación contra la metadata oficial
+
+Verifica contra bench/TabArena-v0.1_tasks_metadata.csv (copia sin modificar del repo oficial
+autogluon/tabarena, Apache-2.0): filas, columnas, número de clases y, por partición,
+tamaños de train/test. Si algo no coincide lo marca en el manifest y en la salida.
+"""
+import csv
+import gzip
+import hashlib
+import io
+import json
+import sys
+import time
+import urllib.request
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
+
+ROOT = Path(__file__).resolve().parent.parent
+META = ROOT / "bench" / "TabArena-v0.1_tasks_metadata.csv"
+OUT = ROOT / "data"
+API = "https://www.openml.org/api/v1/json"
+UA = {"User-Agent": "testbench-fetch/0.1"}
+
+
+def get(url, binary=False, tries=4):
+    for i in range(tries):
+        try:
+            with urllib.request.urlopen(urllib.request.Request(url, headers=UA), timeout=120) as r:
+                raw = r.read()
+            if raw[:2] == b"\x1f\x8b":
+                raw = gzip.decompress(raw)
+            return raw if binary else raw.decode("utf-8")
+        except Exception as e:  # red inestable: reintento con espera
+            if i == tries - 1:
+                raise RuntimeError(f"Fallo al descargar {url}: {e}") from e
+            time.sleep(3 * (i + 1))
+
+
+def get_json(url):
+    return json.loads(get(url))
+
+
+# ---------------------------------------------------------------- ARFF
+def _unquote(v):
+    v = v.strip()
+    if len(v) >= 2 and v[0] == v[-1] and v[0] in "'\"":
+        v = v[1:-1].replace("\\'", "'").replace('\\"', '"').replace("\\\\", "\\")
+    return v
+
+
+def _split_values(text):
+    """Separa por comas respetando comillas simples o dobles."""
+    return next(csv.reader([text], quotechar="'", escapechar="\\", skipinitialspace=True))
+
+
+def parse_arff(text):
+    attrs, data_lines, in_data = [], [], False
+    for line in io.StringIO(text):
+        s = line.strip()
+        if not s or s.startswith("%"):
+            continue
+        if in_data:
+            data_lines.append(s)
+            continue
+        low = s.lower()
+        if low.startswith("@attribute"):
+            rest = s[len("@attribute"):].strip()
+            if rest[0] in "'\"":
+                q = rest[0]
+                end = rest.index(q, 1)
+                while rest[end - 1] == "\\":
+                    end = rest.index(q, end + 1)
+                name, typ = _unquote(rest[: end + 1]), rest[end + 1:].strip()
+            else:
+                name, typ = rest.split(None, 1)
+            if typ.startswith("{"):
+                cats = [_unquote(c) for c in _split_values(typ.strip()[1:-1])]
+                attrs.append((name, "nominal", cats))
+            else:
+                attrs.append((name, typ.split()[0].lower(), None))
+        elif low.startswith("@data"):
+            in_data = True
+    names = [a[0] for a in attrs]
+    rows = []
+    for s in data_lines:
+        if s.startswith("{"):  # formato disperso: {idx valor, ...}
+            row = ["0"] * len(names)
+            body = s[1:-1].strip()
+            if body:
+                for item in _split_values(body):
+                    idx, val = item.strip().split(None, 1)
+                    row[int(idx)] = val
+        else:
+            row = _split_values(s)
+        rows.append(row)
+    df = pd.DataFrame(rows, columns=names, dtype=object)
+    for name, typ, _ in attrs:
+        col = df[name].map(lambda v: None if v is None or str(v).strip() == "?" else _unquote(str(v)))
+        if typ in ("numeric", "real", "integer"):
+            df[name] = pd.to_numeric(col, errors="coerce")
+        else:
+            df[name] = col
+    return df, attrs
+
+
+# ---------------------------------------------------------------- descarga de una tarea
+def fetch_task(task_id):
+    task = get_json(f"{API}/task/{task_id}")["task"]
+    inputs = {i["name"]: i for i in task["input"]}
+    did = int(inputs["source_data"]["data_set"]["data_set_id"])
+    target = inputs["source_data"]["data_set"]["target_feature"]
+    splits_url = inputs["estimation_procedure"]["estimation_procedure"]["data_splits_url"]
+
+    desc = get_json(f"{API}/data/{did}")["data_set_description"]
+    feats = get_json(f"{API}/data/features/{did}")["data_features"]["feature"]
+    drop = {f["name"] for f in feats if str(f.get("is_ignore", "false")) == "true"
+            or str(f.get("is_row_identifier", "false")) == "true"}
+    drop |= set(filter(None, str(desc.get("row_id_attribute") or "").split(",")))
+    drop |= set(filter(None, str(desc.get("ignore_attribute") or "").split(",")))
+    drop.discard(target)
+
+    df, attrs = parse_arff(get(desc["url"]))
+    split_df, _ = parse_arff(get(splits_url))
+    split_df.columns = [c.lower() for c in split_df.columns]
+    for c in ("rowid", "repeat", "fold"):
+        split_df[c] = split_df[c].astype(int)
+    split_df["type"] = split_df["type"].astype(str).str.upper()
+
+    df = df[[c for c in df.columns if c not in drop]]
+    schema = {
+        "task_id": task_id, "dataset_id": did, "dataset_version": desc.get("version"),
+        "target": target, "dropped": sorted(drop),
+        "columns": [{"name": n, "type": "nominal" if t == "nominal" else "numeric", "categories": cats}
+                    for n, t, cats in attrs if n in df.columns],
+        "source_url": desc["url"], "splits_url": splits_url,
+    }
+    return df, split_df, schema
+
+
+def md5(path):
+    h = hashlib.md5()
+    with open(path, "rb") as f:
+        for chunk in iter(lambda: f.read(1 << 20), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+
+def verify(name, df, split_df, schema, meta):
+    m = meta[meta.dataset_name == name]
+    first = m.iloc[0]
+    issues = []
+    if len(df) != int(first.num_instances):
+        issues.append(f"filas {len(df)} != {int(first.num_instances)}")
+    n_feat = df.shape[1] - 1
+    if n_feat != int(first.num_features):
+        issues.append(f"features {n_feat} != {int(first.num_features)}")
+    k = df[schema["target"]].nunique(dropna=True)
+    if k != int(first.num_classes):
+        issues.append(f"clases {k} != {int(first.num_classes)}")
+    got = split_df.groupby(["repeat", "fold"]).type.value_counts().unstack(fill_value=0)
+    if len(got) != len(m):
+        issues.append(f"particiones {len(got)} != {len(m)}")
+    for _, r in m.iterrows():
+        key = (int(r["repeat"]), int(r["fold"]))
+        if key not in got.index:
+            issues.append(f"falta partición {key}")
+            continue
+        tr, te = int(got.loc[key].get("TRAIN", 0)), int(got.loc[key].get("TEST", 0))
+        if (tr, te) != (int(r.num_instances_train), int(r.num_instances_test)):
+            issues.append(f"partición {key}: train/test {tr}/{te} != {int(r.num_instances_train)}/{int(r.num_instances_test)}")
+    return issues
+
+
+def main():
+    meta = pd.read_csv(META)
+    meta = meta[meta.is_classification]
+    names = sys.argv[1:] or sorted(meta.dataset_name.unique())
+    OUT.mkdir(exist_ok=True)
+    man_path = OUT / "manifest.json"
+    manifest = json.loads(man_path.read_text()) if man_path.exists() else {}
+    for name in names:
+        rows = meta[meta.dataset_name == name]
+        if rows.empty:
+            print(f"?? {name}: no está en la metadata de clasificación"); continue
+        tid = int(rows.iloc[0].task_id_str)
+        t0 = time.time()
+        try:
+            df, split_df, schema = fetch_task(tid)
+        except Exception as e:
+            print(f"ERROR {name} (task {tid}): {e}")
+            manifest[name] = {"task_id": tid, "error": str(e)}
+            man_path.write_text(json.dumps(manifest, indent=1)); continue
+        d = OUT / name
+        d.mkdir(exist_ok=True)
+        df.to_csv(d / "data.csv.gz", index=False, compression={"method": "gzip", "mtime": 0})
+        split_df.to_csv(d / "splits.csv.gz", index=False, compression={"method": "gzip", "mtime": 0})
+        (d / "schema.json").write_text(json.dumps(schema, indent=1, ensure_ascii=False))
+        issues = verify(name, df, split_df, schema, meta)
+        manifest[name] = {
+            "task_id": tid, "rows": int(len(df)), "features": int(df.shape[1] - 1),
+            "classes": int(df[schema["target"]].nunique()), "splits": int(split_df.groupby(["repeat", "fold"]).ngroups),
+            "md5_data": md5(d / "data.csv.gz"), "md5_splits": md5(d / "splits.csv.gz"),
+            "verified": not issues, "issues": issues,
+        }
+        man_path.write_text(json.dumps(manifest, indent=1))
+        tag = "OK " if not issues else "DIF"
+        print(f"{tag} {name:45s} task={tid} {len(df):7d}x{df.shape[1]-1:5d} "
+              f"k={manifest[name]['classes']} splits={manifest[name]['splits']} {time.time()-t0:5.1f}s {'; '.join(issues)}")
+    ok = sum(v.get("verified", False) for v in manifest.values())
+    print(f"\n{ok}/{len(manifest)} verificados. Manifest: {man_path}")
+
+
+if __name__ == "__main__":
+    main()
