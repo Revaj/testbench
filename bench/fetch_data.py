@@ -1,8 +1,9 @@
 """Descarga los 38 datasets de clasificación de TabArena-v0.1 y sus particiones oficiales desde OpenML.
 
-Uso (en una máquina con acceso a openml.org):
-    python bench/fetch_data.py                  # todos
+Uso (desde la raíz del repo clonado, en una máquina con acceso a openml.org):
+    python bench/fetch_data.py                  # todos; si se corta, vuelve a correrlo: salta los ya verificados
     python bench/fetch_data.py credit-g splice  # solo algunos (por dataset_name)
+    python bench/fetch_data.py --force          # repetir aunque ya estén descargados
 
 Requisitos: Python 3.11, numpy y pandas. Sin el paquete `openml` ni `tabarena`:
 usa solo la API REST pública de OpenML (JSON + ARFF) con urllib.
@@ -37,18 +38,28 @@ API = "https://www.openml.org/api/v1/json"
 UA = {"User-Agent": "testbench-fetch/0.1"}
 
 
-def get(url, binary=False, tries=4):
+def get(url, binary=False, tries=8):
+    """Descarga con reintentos y espera creciente (3, 6, 12, ... hasta 60 s).
+    Aguanta cortes de red (connection reset, DNS caído un momento)."""
     for i in range(tries):
         try:
-            with urllib.request.urlopen(urllib.request.Request(url, headers=UA), timeout=120) as r:
-                raw = r.read()
+            buf = io.BytesIO()
+            with urllib.request.urlopen(urllib.request.Request(url, headers=UA), timeout=180) as r:
+                while True:
+                    chunk = r.read(1 << 20)
+                    if not chunk:
+                        break
+                    buf.write(chunk)
+            raw = buf.getvalue()
             if raw[:2] == b"\x1f\x8b":
                 raw = gzip.decompress(raw)
             return raw if binary else raw.decode("utf-8")
-        except Exception as e:  # red inestable: reintento con espera
+        except Exception as e:
             if i == tries - 1:
                 raise RuntimeError(f"Fallo al descargar {url}: {e}") from e
-            time.sleep(3 * (i + 1))
+            wait = min(60, 3 * 2 ** i)
+            print(f"   reintento {i + 1}/{tries - 1} en {wait}s ({type(e).__name__}: {e})", flush=True)
+            time.sleep(wait)
 
 
 def get_json(url):
@@ -189,7 +200,7 @@ def verify(name, df, split_df, schema, meta):
 def main():
     meta = pd.read_csv(META)
     meta = meta[meta.is_classification]
-    names = sys.argv[1:] or sorted(meta.dataset_name.unique())
+    names = [a for a in sys.argv[1:] if not a.startswith("--")] or sorted(meta.dataset_name.unique())
     OUT.mkdir(exist_ok=True)
     man_path = OUT / "manifest.json"
     manifest = json.loads(man_path.read_text()) if man_path.exists() else {}
@@ -198,6 +209,10 @@ def main():
         if rows.empty:
             print(f"?? {name}: no está en la metadata de clasificación"); continue
         tid = int(rows.iloc[0].task_id_str)
+        prev = manifest.get(name, {})
+        if prev.get("verified") and (OUT / name / "data.csv.gz").exists() and "--force" not in sys.argv:
+            print(f"OK  {name:45s} ya descargado y verificado (usa --force para repetir)")
+            continue
         t0 = time.time()
         try:
             df, split_df, schema = fetch_task(tid)
@@ -222,7 +237,10 @@ def main():
         print(f"{tag} {name:45s} task={tid} {len(df):7d}x{df.shape[1]-1:5d} "
               f"k={manifest[name]['classes']} splits={manifest[name]['splits']} {time.time()-t0:5.1f}s {'; '.join(issues)}")
     ok = sum(v.get("verified", False) for v in manifest.values())
+    bad = [k for k, v in manifest.items() if not v.get("verified")]
     print(f"\n{ok}/{len(manifest)} verificados. Manifest: {man_path}")
+    if bad:
+        print("Pendientes (vuelve a correr el script; retoma donde se quedó):", ", ".join(sorted(bad)))
 
 
 if __name__ == "__main__":
