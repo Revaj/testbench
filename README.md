@@ -58,7 +58,9 @@ python bench/fetch_data.py            # los 38 datasets de clasificación de Tab
 python bench/fetch_data.py credit-g   # o solo algunos
 ```
 
-Requiere Python 3.11, numpy y pandas (usa la API REST de OpenML, sin paquetes extra). Escribe en
+Requiere Python 3.11, numpy y pandas (usa la API REST de OpenML, sin paquetes extra). Descarga 4 datasets
+en paralelo (`--jobs=N` para cambiarlo) y, si se corta, al volver a correrlo retoma donde se quedó.
+Enlaces directos de cada dataset y de sus particiones, para bajarlos a mano: [`bench/DESCARGAS.md`](bench/DESCARGAS.md). Escribe en
 `data/` los datos, el esquema y las particiones oficiales de cada task, y verifica filas, columnas,
 clases y tamaños de cada partición contra `bench/TabArena-v0.1_tasks_metadata.csv` (copia sin
 modificar de [autogluon/tabarena](https://github.com/autogluon/tabarena), Apache-2.0).

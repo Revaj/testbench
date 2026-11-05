@@ -4,6 +4,7 @@ Uso (desde la raíz del repo clonado, en una máquina con acceso a openml.org):
     python bench/fetch_data.py                  # todos; si se corta, vuelve a correrlo: salta los ya verificados
     python bench/fetch_data.py credit-g splice  # solo algunos (por dataset_name)
     python bench/fetch_data.py --force          # repetir aunque ya estén descargados
+    python bench/fetch_data.py --jobs=8         # descargas en paralelo (por defecto 4)
 
 Requisitos: Python 3.11, numpy y pandas. Sin el paquete `openml` ni `tabarena`:
 usa solo la API REST pública de OpenML (JSON + ARFF) con urllib.
@@ -210,46 +211,63 @@ def verify(name, df, split_df, schema, meta):
     return issues
 
 
+def _one(name, meta, manifest, lock, man_path):
+    rows = meta[meta.dataset_name == name]
+    if rows.empty:
+        print(f"?? {name}: no está en la metadata de clasificación"); return
+    tid = int(rows.iloc[0].task_id_str)
+    prev = manifest.get(name, {})
+    if prev.get("verified") and (OUT / name / "data.csv.gz").exists() and "--force" not in sys.argv:
+        print(f"OK  {name:45s} ya descargado y verificado (usa --force para repetir)"); return
+    t0 = time.time()
+    print(f"--> {name} (task {tid}, {int(rows.iloc[0].num_instances)} filas x {int(rows.iloc[0].num_features)} columnas)", flush=True)
+    try:
+        df, split_df, schema = fetch_task(tid)
+    except Exception as e:
+        print(f"ERROR {name} (task {tid}): {e}", flush=True)
+        with lock:
+            manifest[name] = {"task_id": tid, "error": str(e)}
+            man_path.write_text(json.dumps(manifest, indent=1))
+        return
+    # OpenML guarda 10 repeticiones para todos; TabArena-v0.1 usa solo las primeras 3 en datasets con >= 2,500 filas
+    n_rep = int(rows["repeat"].max()) + 1
+    schema["openml_repeats"] = int(split_df["repeat"].max()) + 1
+    schema["tabarena_repeats"] = n_rep
+    split_df = split_df[split_df["repeat"] < n_rep].reset_index(drop=True)
+    d = OUT / name
+    d.mkdir(exist_ok=True)
+    df.to_csv(d / "data.csv.gz", index=False, compression={"method": "gzip", "mtime": 0})
+    split_df.to_csv(d / "splits.csv.gz", index=False, compression={"method": "gzip", "mtime": 0})
+    (d / "schema.json").write_text(json.dumps(schema, indent=1, ensure_ascii=False))
+    issues = verify(name, df, split_df, schema, meta)
+    entry = {
+        "task_id": tid, "dataset_id": schema["dataset_id"], "rows": int(len(df)), "features": int(df.shape[1] - 1),
+        "classes": int(df[schema["target"]].nunique()), "splits": int(split_df.groupby(["repeat", "fold"]).ngroups),
+        "md5_data": md5(d / "data.csv.gz"), "md5_splits": md5(d / "splits.csv.gz"),
+        "verified": not issues, "issues": issues,
+    }
+    with lock:
+        manifest[name] = entry
+        man_path.write_text(json.dumps(manifest, indent=1, sort_keys=True))
+    tag = "OK " if not issues else "DIF"
+    print(f"{tag} {name:45s} task={tid} {len(df):7d}x{df.shape[1]-1:5d} "
+          f"k={entry['classes']} splits={entry['splits']} {time.time()-t0:5.1f}s {'; '.join(issues)}", flush=True)
+
+
 def main():
+    import threading
+    from concurrent.futures import ThreadPoolExecutor
     meta = pd.read_csv(META)
     meta = meta[meta.is_classification]
+    jobs = next((int(a.split("=")[1]) for a in sys.argv[1:] if a.startswith("--jobs=")), 4)
     names = [a for a in sys.argv[1:] if not a.startswith("--")] or list(meta.groupby("dataset_name").num_instances.first().sort_values().index)
     OUT.mkdir(exist_ok=True)
     man_path = OUT / "manifest.json"
     manifest = json.loads(man_path.read_text()) if man_path.exists() else {}
-    for name in names:
-        rows = meta[meta.dataset_name == name]
-        if rows.empty:
-            print(f"?? {name}: no está en la metadata de clasificación"); continue
-        tid = int(rows.iloc[0].task_id_str)
-        prev = manifest.get(name, {})
-        if prev.get("verified") and (OUT / name / "data.csv.gz").exists() and "--force" not in sys.argv:
-            print(f"OK  {name:45s} ya descargado y verificado (usa --force para repetir)")
-            continue
-        t0 = time.time()
-        print(f"--> {name} (task {tid}, {int(rows.iloc[0].num_instances)} filas x {int(rows.iloc[0].num_features)} columnas)", flush=True)
-        try:
-            df, split_df, schema = fetch_task(tid)
-        except Exception as e:
-            print(f"ERROR {name} (task {tid}): {e}")
-            manifest[name] = {"task_id": tid, "error": str(e)}
-            man_path.write_text(json.dumps(manifest, indent=1)); continue
-        d = OUT / name
-        d.mkdir(exist_ok=True)
-        df.to_csv(d / "data.csv.gz", index=False, compression={"method": "gzip", "mtime": 0})
-        split_df.to_csv(d / "splits.csv.gz", index=False, compression={"method": "gzip", "mtime": 0})
-        (d / "schema.json").write_text(json.dumps(schema, indent=1, ensure_ascii=False))
-        issues = verify(name, df, split_df, schema, meta)
-        manifest[name] = {
-            "task_id": tid, "rows": int(len(df)), "features": int(df.shape[1] - 1),
-            "classes": int(df[schema["target"]].nunique()), "splits": int(split_df.groupby(["repeat", "fold"]).ngroups),
-            "md5_data": md5(d / "data.csv.gz"), "md5_splits": md5(d / "splits.csv.gz"),
-            "verified": not issues, "issues": issues,
-        }
-        man_path.write_text(json.dumps(manifest, indent=1))
-        tag = "OK " if not issues else "DIF"
-        print(f"{tag} {name:45s} task={tid} {len(df):7d}x{df.shape[1]-1:5d} "
-              f"k={manifest[name]['classes']} splits={manifest[name]['splits']} {time.time()-t0:5.1f}s {'; '.join(issues)}")
+    lock = threading.Lock()
+    print(f"Descargando {len(names)} datasets con {jobs} descargas en paralelo (cambia con --jobs=N)", flush=True)
+    with ThreadPoolExecutor(max_workers=jobs) as ex:
+        list(ex.map(lambda nm: _one(nm, meta, manifest, lock, man_path), names))
     ok = sum(v.get("verified", False) for v in manifest.values())
     bad = [k for k, v in manifest.items() if not v.get("verified")]
     print(f"\n{ok}/{len(manifest)} verificados. Manifest: {man_path}")

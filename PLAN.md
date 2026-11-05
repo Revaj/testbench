@@ -179,6 +179,12 @@ legacy/
   gradcheck VOS OK, peor caso ≤ 43 s y ≤ 2.6 MB (tabla en README). Entregables de un archivo en `submissions/`.
   Siguiente: Javier corre `bench/fetch_data.py`; luego pasos 3, 7, 8, 9.
 
+- 2026-11-06: Encontrado y corregido: OpenML guarda 10 repeticiones para todas las tareas, pero TabArena-v0.1 usa
+  solo 3 en 26 de los 38 datasets (los de ≥ 2,500 filas). `fetch_data.py` ahora filtra a las repeticiones de TabArena
+  (antes la verificación habría marcado DIF y la evaluación habría corrido 3× más particiones). También descarga en
+  paralelo (`--jobs`, 4 por defecto). Lista de enlaces directos en `bench/DESCARGAS.md` / `bench/descargas.csv`, con
+  `dataset_id` tomado de `curated_tabarena_dataset_metadata.csv` del repo oficial.
+
 ## Fuentes
 
 - TabArena: A Living Benchmark for Machine Learning on Tabular Data — https://arxiv.org/abs/2506.16791
