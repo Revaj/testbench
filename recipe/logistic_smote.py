@@ -346,3 +346,19 @@ class LogisticSmoteModel(ClassifierMixin, BaseEstimator):
 
 def build_model():
     return LogisticSmoteModel()
+
+
+# ================================================================ uso como rama de un stacking
+class LRSmoteBase(BaseEstimator):
+    """Adaptador para usar esta receta como base extra de stacking.StackingModel (interfaz
+    fit(X_crudo, y, K, budget) / predict_proba con K columnas). Conserva TODO su preprocesamiento y su
+    SMOTE-NC dentro de su fit: en el stacking eso ocurre solo con las filas de entrenamiento de cada fold,
+    nunca con las filas cuyas predicciones ve el meta-modelo."""
+
+    def fit(self, X, y, K, budget=None):
+        self.K_ = K
+        self.model_ = LogisticSmoteModel().fit(X, y)
+        return self
+
+    def predict_proba(self, X):
+        return _align(self.model_.predict_proba(X), self.model_.classes_.astype(int), self.K_)

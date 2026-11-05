@@ -28,6 +28,7 @@ Las variantes de comparación se arman en [`bench/variants.py`](bench/variants.p
 | `MLP` | `mlp_vos.build_model(use_vos=False)` | Control de MLP-VOS (misma red, sin VOS) |
 | `MLP-VOS` | `mlp_vos.build_model()` | MLP con VOS sola |
 | `LR-SMOTE` | `logistic_smote.build_model()` | Logística + SMOTE |
+| `R4` | stacking + `logistic_smote.LRSmoteBase()` como 4.ª base | **Demostrativa:** cómo se encapsula una rama con SMOTE dentro del stacking |
 | `B-LIN`, `B-HGB`, `B-SMALL` | `stacking.build_model("B-...")` | Cada base sola |
 
 ### Principio: cada modelo tiene su propio preprocesamiento
@@ -68,6 +69,24 @@ desde el 40 % de las épocas, como el paper. Desviación documentada: la cola de
 Los gradientes (incluido el término VOS) se verifican contra diferencias finitas en `tests/gradcheck_vos.py`.
 Como 4.ª base del stacking usa su propio preprocesamiento (no el de la logística).
 
+### Cómo se juntan: pipeline general del stacking
+
+```
+tabla cruda X
+   ├─► pipeline propio de la logística ─► logística ─┐
+   ├─► pipeline propio del HGB ────────► HGB ───────┤  probabilidades
+   ├─► pipeline propio de ExtraTrees ──► ET ────────┤  fuera de muestra
+   └─► pipeline propio de la 4.ª rama ─► MLP-VOS / logística+SMOTE ─┘
+                                                     ▼
+          pipeline general: probabilidades → logits → meta-modelo L2 → predicción final
+```
+
+El pipeline general no vuelve a preprocesar columnas: solo recibe las probabilidades de cada rama. En R4 la rama
+de logística + SMOTE-NC lleva su preprocesamiento y su SMOTE dentro de su propio `fit`, así que en cada fold
+solo genera filas sintéticas con las filas de entrenamiento de ese fold, nunca con las que ve el meta-modelo;
+y como corrige sus probabilidades al prior original, le entrega al meta-modelo probabilidades en la misma escala
+que las otras ramas. Es demostrativa: probablemente aporte poca diversidad, porque es una segunda logística.
+
 ### Logística + SMOTE-NC
 SMOTE-NC (Chawla et al., 2002, §6.1) implementado en NumPy, solo con filas de entrenamiento: las numéricas se
 interpolan entre un punto y un vecino de su clase; las categóricas (y los indicadores de faltante) toman la
@@ -105,11 +124,11 @@ python tests/check_independence.py     # ninguna base comparte preprocesamiento 
 python tests/gradcheck_vos.py          # gradientes de la MLP y de VOS vs diferencias finitas
 ```
 
-- **Casos raros:** 40/40 correctos (10 variantes × 4 casos: 8 clases con la menor de 2 ejemplos, binario con
+- **Casos raros:** 44/44 correctos (11 variantes × 4 casos: 8 clases con la menor de 2 ejemplos, binario con
   3 positivos, etiquetas de texto, clase de ~0.8 %; en test: categorías nunca vistas, filas todo NaN, columna
   vacía y constante). Probado en Python 3.13 + scikit-learn 1.9.1 y en Python 3.11 + scikit-learn 1.4.2 y 1.6.1.
-- **Reproducibilidad:** 10/10 variantes dan las mismas probabilidades en dos ajustes, en las tres versiones.
-- **Independencia del preprocesamiento:** 0 objetos compartidos entre las 4 bases del stacking con MLP.
+- **Reproducibilidad:** 11/11 variantes dan las mismas probabilidades en dos ajustes, en las tres versiones.
+- **Independencia del preprocesamiento:** 0 objetos compartidos entre las 4 bases del stacking, con MLP (R3) y con logística + SMOTE (R4).
 - **Gradientes:** error relativo máximo 1.4e-7.
 - **Peor caso** (sandbox de 2 CPU; el servidor del curso puede ser hasta 5× más lento):
 
@@ -119,6 +138,8 @@ python tests/gradcheck_vos.py          # gradientes de la MLP y de VOS vs difere
 | 3,750 × 1,776, binario | 15.1 s | 19.3 s | 1.5 s | 0.5 s | 2.64 MB |
 | 3,850 × 1,617, 3 clases (una de 1 %) | 8.5 s | 13.3 s | 1.4 s | 0.8 s | 2.28 MB |
 | 150k × 10, binario desbalanceado | 2.6 s | 10.9 s | 3.6 s | 0.3 s | 1.07 MB |
+
+R4 (demostrativa): 31.6 s / 15.6 s / 10.7 s / 3.3 s en los mismos cuatro casos; pickle máximo 3.07 MB.
 
 ## Medido / pendiente / hipótesis
 

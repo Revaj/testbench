@@ -79,6 +79,7 @@ Fecha del plan: 2026-11-05. Autor: Javier Rizo + Claude.
 | R2 | R1 + MLP sin VOS como 4.ª base | Control |
 | R3 | R1 + MLP-VOS como 4.ª base | Experimento VOS dentro del stack |
 | LR-SMOTE | Regresión logística + SMOTE (NumPy) con corrección de prior | Tercera receta, pedida por Javier el 2026-11-05 |
+| R4 | R1 + logística/SMOTE-NC como 4.ª rama | Demostrativa: cómo se encapsula una rama con SMOTE en el stacking |
 
 La comparación que responde "¿sirve VOS?" es **MLP-VOS vs MLP** y **R3 vs R2**: mismas semillas, mismos folds, mismo código salvo el término VOS.
 
@@ -201,6 +202,10 @@ legacy/
   Bug encontrado y corregido: en scikit-learn 1.9 `TargetEncoder(shuffle=..., random_state=...)` está obsoleto y
   baraja al azar → resultados no reproducibles (la misma receta daba 18 o 22 épocas). Ahora se pasa un
   `StratifiedKFold` con semilla; `tests/check_recipes.py repro` verifica que dos ajustes dan lo mismo.
+
+- 2026-11-06: Variante demostrativa R4 = stacking + logística/SMOTE-NC como 4.ª rama (`logistic_smote.LRSmoteBase`,
+  pedida por Javier). Su preprocesamiento y su SMOTE quedan dentro de su fit (en el stacking: solo filas de
+  entrenamiento de cada fold). Bordes 4/4, reproducible, 0 objetos compartidos, peor caso 31.6 s y 3.07 MB.
 
 ## Fuentes
 
