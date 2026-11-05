@@ -193,6 +193,15 @@ legacy/
   `extra_bases={"mlp": MLPBase(...)}`, armadas en `bench/variants.py`. Bordes 40/40 en sklearn 1.4.2/1.6.1/1.9.1; gradcheck OK;
   cada archivo corre solo en una carpeta vacía y su pickle se recarga en un proceso nuevo.
 
+- 2026-11-06: A pedido de Javier ("no mezcles el preprocesamiento de cada parte"): se eliminó el `Featurizer`
+  compartido y `_linear_ct`. Ahora cada modelo (logística, HGB, ExtraTrees, MLP, logística+SMOTE) recibe la tabla
+  cruda y ajusta su propio preprocesamiento, con sus propios umbrales (tabla en README). La MLP como 4.ª base del
+  stacking también usa el suyo. SMOTE pasó a SMOTE-NC (categóricas por moda de vecinos, no interpolando one-hot).
+  `tests/check_independence.py` verifica 0 objetos de preprocesamiento compartidos entre bases.
+  Bug encontrado y corregido: en scikit-learn 1.9 `TargetEncoder(shuffle=..., random_state=...)` está obsoleto y
+  baraja al azar → resultados no reproducibles (la misma receta daba 18 o 22 épocas). Ahora se pasa un
+  `StratifiedKFold` con semilla; `tests/check_recipes.py repro` verifica que dos ajustes dan lo mismo.
+
 ## Fuentes
 
 - TabArena: A Living Benchmark for Machine Learning on Tabular Data — https://arxiv.org/abs/2506.16791

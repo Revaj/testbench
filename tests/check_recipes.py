@@ -3,6 +3,7 @@
     python tests/check_recipes.py edge            # casos raros, todas las variantes
     python tests/check_recipes.py smoke           # 80/20 sintético mixto, todas las variantes
     python tests/check_recipes.py stress R1 R3    # peor caso: tiempo de fit y tamaño de pickle
+    python tests/check_recipes.py repro           # dos ajustes iguales dan las mismas probabilidades
 
 Verifica en cada caso: forma (n, k), probabilidades finitas que suman 1, orden de classes_,
 y que el pickle recargado predice lo mismo. El tamaño de pickle debe ser < 5 MB.
@@ -135,5 +136,17 @@ def stress(variants):
             print(f"{'OK ' if ok else 'MAL'} {name:24s} {v:9s} fit={tf:6.1f}s pred+pickle={tp:5.1f}s pkl={size/1e6:4.2f}MB {mn}={val:.4f}", flush=True)
 
 
+def repro():
+    """Dos ajustes con los mismos datos deben dar las mismas probabilidades (semillas fijas en todo)."""
+    rng = np.random.default_rng(11)
+    X, y = mixed(3000, rng, k=3)
+    Xte, _ = mixed(300, rng, k=3)
+    for v in ALL:
+        P1 = VARIANTS[v]().fit(X, y).predict_proba(Xte)
+        P2 = VARIANTS[v]().fit(X, y).predict_proba(Xte)
+        d = np.abs(P1 - P2).max()
+        print(f"{'OK ' if d < 1e-9 else 'MAL'} {v:9s} diferencia máxima entre dos ajustes = {d:.1e}", flush=True)
+
+
 if __name__ == "__main__":
-    {"edge": lambda: edge(), "smoke": lambda: smoke(), "stress": lambda: stress(sys.argv[2:] or ["R1", "R3", "MLP-VOS", "LR-SMOTE"])}[sys.argv[1]]()
+    {"edge": lambda: edge(), "smoke": lambda: smoke(), "repro": lambda: repro(), "stress": lambda: stress(sys.argv[2:] or ["R1", "R3", "MLP-VOS", "LR-SMOTE"])}[sys.argv[1]]()

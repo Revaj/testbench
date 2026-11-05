@@ -4,11 +4,13 @@ MLP en NumPy con VOS (Virtual Outlier Synthesis; Du et al., ICLR 2022) para clas
 
     model = build_model();  model.fit(X, y);  model.predict_proba(X_test)   # columnas en el orden de classes_
 
-`build_model(use_vos=False)` da exactamente la misma red sin el término VOS: es el control del experimento.
-`MLPBase` también se puede usar como base extra del stacking (ver bench/variants.py).
+`build_model(use_vos=False)` da exactamente la misma red y el mismo preprocesamiento sin el término VOS:
+es el control del experimento. `MLPBase` se puede usar como 4.a base del stacking; recibe la tabla cruda y
+usa su propio preprocesamiento, pensado para una red neuronal (ver MLPBase).
 
 Ningún hiperparámetro se eligió mirando datos de evaluación: son los del paper o reglas fijas por tamaño.
 """
+import inspect
 import pickle
 import warnings
 
@@ -17,20 +19,14 @@ import pandas as pd
 from scipy.stats import chi2
 from sklearn.base import BaseEstimator, ClassifierMixin, TransformerMixin
 from sklearn.compose import ColumnTransformer
-from sklearn.impute import SimpleImputer
-from sklearn.model_selection import train_test_split
+from sklearn.impute import MissingIndicator, SimpleImputer
+from sklearn.model_selection import StratifiedKFold, train_test_split
 from sklearn.pipeline import make_pipeline
-from sklearn.preprocessing import OneHotEncoder, RobustScaler, TargetEncoder
+from sklearn.preprocessing import (OneHotEncoder, QuantileTransformer, RobustScaler, StandardScaler,
+                                   TargetEncoder)
 
 USE_VOS = True
 SEED = 0
-
-# ---------------------------------------------------------------- reglas fijas (no ajustadas con datos)
-LOW_CARD_MAX = 30            # <= 30 categorías: one-hot / categórica nativa; > 30: target encoding
-HC_MAX_CATS_TOTAL = 30_000   # categorías guardadas (sumando columnas de alta cardinalidad)
-HC_MAX_CATS_COL = 2_000
-OHE_MIN_FREQ, OHE_MAX_CATS = 10, 30
-CLIP = 5.0
 
 MLP_BUDGET = 600_000
 MLP_MAX_ROWS = 50_000
@@ -43,7 +39,7 @@ VOS_SAMPLE_FROM = 10_000     # candidatos por clase; se toma el de menor verosim
 VOS_START_FRAC = 0.4         # el paper empieza en la época 40 de 100
 
 
-# ================================================================ utilidades
+# ================================================================ utilidades (no preprocesan nada)
 def _clip_p(P):
     return np.clip(P, 1e-7, 1.0)
 
@@ -60,13 +56,55 @@ def _size(obj):
     return len(pickle.dumps(obj, protocol=pickle.HIGHEST_PROTOCOL))
 
 
-def _lr_C(n, p):
-    # más regularización cuando hay pocas filas por columna codificada
-    return 1.0 if n >= 10 * max(p, 1) else 0.1
+def _frame(X):
+    X = pd.DataFrame(X).reset_index(drop=True)
+    X.columns = [str(c) for c in X.columns]
+    return X
 
 
+def _as_str(s):
+    s = pd.Series(s)
+    out = pd.Series(s.astype(object).astype(str).to_numpy(dtype=object), index=s.index, dtype=object)
+    out[s.isna().to_numpy()] = np.nan
+    return out
+
+
+def _raw_types(X):
+    """Solo inspección de la tabla cruda: columnas numéricas y categóricas (con su número de valores).
+    Cada modelo decide después, con sus propios umbrales, cómo tratar cada columna."""
+    num, cat = [], {}
+    for c in X.columns:
+        s = X[c]
+        if not s.notna().any():
+            continue
+        if pd.api.types.is_bool_dtype(s) or not pd.api.types.is_numeric_dtype(s):
+            cat[c] = int(s.nunique(dropna=True))
+        else:
+            num.append(c)
+    return num, cat
+
+
+def _stratified_subsample(y, m):
+    try:
+        idx, _ = train_test_split(np.arange(len(y)), train_size=m, stratify=y, random_state=SEED)
+    except ValueError:  # clases con un solo ejemplo
+        idx = np.random.default_rng(SEED).choice(len(y), m, replace=False)
+    return np.sort(idx)
+
+
+def _target_encoder():
+    """TargetEncoder con validación cruzada interna (fit_transform nunca usa la etiqueta de la propia fila),
+    reproducible en todas las versiones: hasta sklearn 1.8 con shuffle + random_state; desde 1.9 (donde esos
+    parámetros son obsoletos y, si no, baraja al azar) con un StratifiedKFold con semilla fija."""
+    if inspect.signature(TargetEncoder).parameters["shuffle"].default != "deprecated":
+        return TargetEncoder(cv=5, shuffle=True, random_state=SEED)
+    return TargetEncoder(cv=StratifiedKFold(5, shuffle=True, random_state=SEED))
+
+
+# ================================================================ piezas de preprocesamiento
+# Son herramientas; cada modelo crea SUS PROPIAS instancias con SUS PROPIOS parámetros.
 class Clipper(TransformerMixin, BaseEstimator):
-    def __init__(self, bound=CLIP):
+    def __init__(self, bound=5.0):
         self.bound = bound
 
     def fit(self, X, y=None):
@@ -80,98 +118,88 @@ class Clipper(TransformerMixin, BaseEstimator):
         return np.clip(np.asarray(X, dtype=np.float32), -self.bound, self.bound)
 
 
-def _as_str(s):
-    out = pd.Series(s.astype(object).astype(str).to_numpy(dtype=object), index=s.index, dtype=object)
-    out[s.isna().to_numpy()] = np.nan
-    return out
+class CategoryCapper(TransformerMixin, BaseEstimator):
+    """Conserva las `max_cats` categorías más frecuentes con al menos `min_count` filas.
+    El resto (y las nunca vistas) -> '__rare__'; faltante -> '__nan__'. Devuelve texto."""
 
+    def __init__(self, max_cats=1000, min_count=1):
+        self.max_cats = max_cats
+        self.min_count = min_count
 
-# ================================================================ featurizer compartido
-class Featurizer(BaseEstimator):
-    """Tipos de columna + codificación de alta cardinalidad (target encoding OOF + frecuencia).
-
-    Se ajusta dentro de cada fold. Las filas de entrenamiento reciben target encoding
-    con validación cruzada (TargetEncoder.fit_transform), así ninguna fila ve su propia etiqueta.
-    El resto del preprocesamiento es propio de cada base.
-    """
-
-    def fit_transform(self, X, y):
-        X = self._frame(X)
-        self.num_, self.low_, self.high_, self.keep_ = [], [], [], {}
+    def fit(self, X, y=None):
+        X = pd.DataFrame(X)
+        self.keep_ = []
         for c in X.columns:
-            s = X[c]
-            if not s.notna().any():
-                continue
-            if pd.api.types.is_bool_dtype(s) or not pd.api.types.is_numeric_dtype(s):
-                (self.low_ if s.nunique(dropna=True) <= LOW_CARD_MAX else self.high_).append(c)
-            else:
-                self.num_.append(c)
-        per_col = int(min(HC_MAX_CATS_COL, HC_MAX_CATS_TOTAL // max(1, len(self.high_))))
-        self.counts_, self.te_ = {}, None
-        if self.high_:
-            H = pd.DataFrame(index=X.index)
-            for c in self.high_:
-                vc = _as_str(X[c]).value_counts()
-                keep = vc[vc >= 2].index[:per_col]
-                self.keep_[c] = pd.Index(keep)
-                H[c] = self._cap(X[c], self.keep_[c])
-                self.counts_[c] = H[c].value_counts()
-            self.te_ = TargetEncoder(target_type="auto", smooth="auto", cv=5, shuffle=True, random_state=SEED)
-            T = self.te_.fit_transform(H, y)
-            return self._assemble(X, H, T)
-        return self._assemble(X, None, None)
+            vc = _as_str(X[c]).value_counts()
+            self.keep_.append(pd.Index(vc[vc >= self.min_count].index[: self.max_cats]))
+        self.n_features_in_ = X.shape[1]
+        return self
 
     def transform(self, X):
-        X = self._frame(X)
-        if not self.high_:
-            return self._assemble(X, None, None)
-        H = pd.DataFrame({c: self._cap(X[c], self.keep_[c]) for c in self.high_}, index=X.index)
-        return self._assemble(X, H, self.te_.transform(H))
-
-    @staticmethod
-    def _frame(X):
-        X = pd.DataFrame(X).copy()
-        X.columns = [str(c) for c in X.columns]
-        return X
-
-    @staticmethod
-    def _cap(s, keep):
-        v = _as_str(s)
-        miss = v.isna()
-        v = v.where(v.isin(keep) | miss, "__rare__")
-        return v.where(~miss, "__nan__").astype(object)
-
-    def _assemble(self, X, H, T):
-        out = {}
-        for c in self.num_:
-            out[c] = pd.to_numeric(X[c], errors="coerce").astype("float32")
-        if H is not None:
-            T = np.asarray(T, dtype="float32")
-            per = T.shape[1] // len(self.high_)
-            for i, c in enumerate(self.high_):
-                for j in range(per):
-                    out[f"{c}__te{j}"] = T[:, i * per + j]
-                out[f"{c}__cnt"] = np.log1p(H[c].map(self.counts_[c]).fillna(0).to_numpy(dtype="float32"))
-        for c in self.low_:
-            out[c] = _as_str(X[c])
-        F = pd.DataFrame(out, index=X.index)
-        self.num_out_ = [c for c in F.columns if c not in self.low_]
-        return F
+        X = pd.DataFrame(X)
+        out = np.empty(X.shape, dtype=object)
+        for j, c in enumerate(X.columns):
+            v = _as_str(X[c])
+            arr = np.where(v.isin(self.keep_[j]).to_numpy(), v.to_numpy(dtype=object), "__rare__")
+            arr[v.isna().to_numpy()] = "__nan__"
+            out[:, j] = arr
+        return out
 
 
-# ================================================================ preprocesamientos por base
-def _linear_ct(num, low, dense):
-    parts = []
-    if num:
-        parts.append(("num", make_pipeline(
-            SimpleImputer(strategy="median", add_indicator=True, keep_empty_features=True),
-            RobustScaler(), Clipper()), num))
-    if low:
-        parts.append(("low", make_pipeline(
-            SimpleImputer(strategy="constant", fill_value="__nan__", keep_empty_features=True),
-            OneHotEncoder(handle_unknown="infrequent_if_exist", min_frequency=OHE_MIN_FREQ,
-                          max_categories=OHE_MAX_CATS, sparse_output=not dense, dtype=np.float32)), low))
-    return ColumnTransformer(parts, sparse_threshold=0.0 if dense else 0.3)
+class CountEncoder(TransformerMixin, BaseEstimator):
+    """log(1 + frecuencia en train) de cada categoría. Guarda a lo más `max_cats` conteos por columna;
+    las demás (de la cola o nunca vistas) reciben el conteo medio de la cola (0 si no hay cola)."""
+
+    def __init__(self, max_cats=5000):
+        self.max_cats = max_cats
+
+    def fit(self, X, y=None):
+        X = pd.DataFrame(X)
+        self.counts_, self.tail_ = [], []
+        for c in X.columns:
+            vc = _as_str(X[c]).fillna("__nan__").value_counts()
+            self.counts_.append(vc.iloc[: self.max_cats])
+            self.tail_.append(float(vc.iloc[self.max_cats:].mean()) if len(vc) > self.max_cats else 0.0)
+        self.n_features_in_ = X.shape[1]
+        return self
+
+    def transform(self, X):
+        X = pd.DataFrame(X)
+        out = np.zeros(X.shape, dtype=np.float32)
+        for j, c in enumerate(X.columns):
+            v = _as_str(X[c]).fillna("__nan__")
+            out[:, j] = np.log1p(v.map(self.counts_[j]).fillna(self.tail_[j]).to_numpy(dtype=np.float32))
+        return out
+
+
+class FreqOrdinal(TransformerMixin, BaseEstimator):
+    """Código entero por rango de frecuencia (0 = más frecuente) para las `max_cats` categorías más comunes;
+    rara o nunca vista -> max_cats; faltante -> `nan_value`. Devuelve float32."""
+
+    def __init__(self, max_cats=254, nan_value=np.nan):
+        self.max_cats = max_cats
+        self.nan_value = nan_value
+
+    def fit(self, X, y=None):
+        X = pd.DataFrame(X)
+        self.maps_ = []
+        for c in X.columns:
+            vc = _as_str(X[c]).value_counts()
+            self.maps_.append(pd.Series(np.arange(min(len(vc), self.max_cats), dtype=np.float32),
+                                        index=vc.index[: self.max_cats]))
+        self.n_features_in_ = X.shape[1]
+        return self
+
+    def transform(self, X):
+        X = pd.DataFrame(X)
+        out = np.empty(X.shape, dtype=np.float32)
+        for j, c in enumerate(X.columns):
+            v = _as_str(X[c])
+            code = np.array(v.map(self.maps_[j]).to_numpy(dtype=np.float32), copy=True)
+            code[np.isnan(code)] = self.max_cats
+            code[v.isna().to_numpy()] = self.nan_value
+            out[:, j] = code
+        return out
 
 
 # ================================================================ MLP en NumPy con/sin VOS
@@ -374,38 +402,66 @@ class VOSNet:
 
 
 class MLPBase(BaseEstimator):
+    """MLP (con o sin VOS) con SU PROPIO preprocesamiento, pensado para una red neuronal:
+      - numéricas: mediana y transformación por cuantiles a una normal (las redes aprenden mejor con
+        entradas acotadas y de escala parecida; es robusta a colas largas). Si hay tantas columnas que la
+        tabla de cuantiles pesaría demasiado, se usa escalado robusto con recorte.
+      - indicadores de faltante aparte (0/1), sin transformar.
+      - categóricas con <= 20 valores: one-hot (raras agrupadas).
+      - categóricas con > 20 valores: target encoding con validación cruzada + log de frecuencia, estandarizados.
+    Recibe la tabla cruda: también como 4.a base del stacking, nunca usa el preprocesamiento de otro modelo."""
+
+    LOW_MAX = 20
+    HC_MAX_CATS = 1_000
+    OHE_MIN_FREQ, OHE_MAX_CATS = 10, 20
+    QUANTILE_BYTES = 250_000
+
     def __init__(self, use_vos=False):
         self.use_vos = use_vos
 
-    def fit(self, F, y, K, budget=MLP_BUDGET, low=()):
-        low = [c for c in F.columns if c in set(low)]
-        num = [c for c in F.columns if c not in set(low)]
-        idx = np.arange(len(y))
+    def _prep(self, X, n):
+        num, cat = _raw_types(X)
+        low = [c for c, k in cat.items() if k <= self.LOW_MAX]
+        high = [c for c, k in cat.items() if k > self.LOW_MAX]
+        parts = []
+        if num:
+            q = int(min(256, n, self.QUANTILE_BYTES // (8 * len(num))))
+            scale = (QuantileTransformer(n_quantiles=q, output_distribution="normal", subsample=50_000,
+                                         random_state=SEED) if q >= 32 else make_pipeline(RobustScaler(), Clipper(5.0)))
+            parts.append(("num", make_pipeline(SimpleImputer(strategy="median", keep_empty_features=True), scale), num))
+            parts.append(("miss", MissingIndicator(features="missing-only", error_on_new=False), num))
+        if low:
+            parts.append(("low", make_pipeline(CategoryCapper(), OneHotEncoder(
+                handle_unknown="infrequent_if_exist", min_frequency=self.OHE_MIN_FREQ,
+                max_categories=self.OHE_MAX_CATS, sparse_output=False, dtype=np.float32)), low))
+        if high:
+            parts.append(("high_te", make_pipeline(CategoryCapper(self.HC_MAX_CATS, min_count=2), _target_encoder(),
+                                                   StandardScaler()), high))
+            parts.append(("high_cnt", make_pipeline(CountEncoder(), StandardScaler()), high))
+        return ColumnTransformer(parts, sparse_threshold=0.0) if parts else None
+
+    def fit(self, X, y, K, budget=MLP_BUDGET):
+        X = _frame(X)
         if len(y) > MLP_MAX_ROWS:
             idx = _stratified_subsample(y, MLP_MAX_ROWS)
-        F, y = F.iloc[idx], y[idx]
-        self.ct_ = _linear_ct(num, low, dense=True)
-        Z = self.ct_.fit_transform(F).astype(np.float32)
-        self.net_ = VOSNet(self.use_vos).fit(Z, y, K)
+            X, y = X.iloc[idx].reset_index(drop=True), y[idx]
         self.K_ = K
+        self.ct_ = self._prep(X, len(y))
+        Z = self.ct_.fit_transform(X, y).astype(np.float32) if self.ct_ is not None else np.zeros((len(y), 1), np.float32)
+        self.net_ = VOSNet(self.use_vos).fit(Z, y, K)
         return self
 
-    def predict_proba(self, F):
-        return self.net_.predict_proba(self.ct_.transform(F).astype(np.float32))
+    def _Z(self, X):
+        X = _frame(X)
+        return self.ct_.transform(X).astype(np.float32) if self.ct_ is not None else np.zeros((len(X), 1), np.float32)
 
-
-def _stratified_subsample(y, m):
-    try:
-        idx, _ = train_test_split(np.arange(len(y)), train_size=m, stratify=y, random_state=SEED)
-    except ValueError:  # clases con un solo ejemplo
-        idx = np.random.default_rng(SEED).choice(len(y), m, replace=False)
-    return np.sort(idx)
-
+    def predict_proba(self, X):
+        return self.net_.predict_proba(self._Z(X))
 
 
 # ================================================================ modelo
 class MLPVOSModel(ClassifierMixin, BaseEstimator):
-    """Featurizer + MLPBase. use_vos=False es el control idéntico sin VOS."""
+    """MLPBase como modelo completo. use_vos=False es el control idéntico sin VOS."""
 
     def __init__(self, use_vos=None):
         self.use_vos = use_vos
@@ -416,19 +472,16 @@ class MLPVOSModel(ClassifierMixin, BaseEstimator):
             return self._fit(X, y)
 
     def _fit(self, X, y):
-        X = pd.DataFrame(X).reset_index(drop=True)
         self.classes_, y = np.unique(np.asarray(y), return_inverse=True)
-        K = len(self.classes_)
-        self.feat_ = Featurizer()
-        F = self.feat_.fit_transform(X, y)
-        self.base_ = MLPBase(use_vos=USE_VOS if self.use_vos is None else self.use_vos).fit(F, y, K, low=self.feat_.low_)
-        self.info_ = {"use_vos": self.base_.use_vos, "epochs": self.base_.net_.epochs_run_, "vos_steps": self.base_.net_.vos_steps_}
+        use_vos = USE_VOS if self.use_vos is None else self.use_vos
+        self.base_ = MLPBase(use_vos=use_vos).fit(X, y, len(self.classes_))
+        self.info_ = {"use_vos": use_vos, "epochs": self.base_.net_.epochs_run_, "vos_steps": self.base_.net_.vos_steps_}
         return self
 
     def predict_proba(self, X):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
-            P = self.base_.predict_proba(self.feat_.transform(pd.DataFrame(X).reset_index(drop=True)))
+            P = self.base_.predict_proba(X)
         P = np.clip(np.nan_to_num(P, nan=0.0), 0, None)
         s = P.sum(axis=1, keepdims=True)
         return np.where(s > 0, P / np.where(s > 0, s, 1), 1.0 / P.shape[1])
