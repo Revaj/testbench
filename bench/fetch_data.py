@@ -23,6 +23,7 @@ import gzip
 import hashlib
 import io
 import json
+import re
 import sys
 import time
 import urllib.request
@@ -44,12 +45,16 @@ def get(url, binary=False, tries=8):
     for i in range(tries):
         try:
             buf = io.BytesIO()
-            with urllib.request.urlopen(urllib.request.Request(url, headers=UA), timeout=180) as r:
+            with urllib.request.urlopen(urllib.request.Request(url, headers=UA), timeout=60) as r:
+                shown = 0
                 while True:
                     chunk = r.read(1 << 20)
                     if not chunk:
                         break
                     buf.write(chunk)
+                    if buf.tell() - shown >= 10 << 20:  # avisa cada 10 MB para que se vea que avanza
+                        shown = buf.tell()
+                        print(f"   ... {shown / 1e6:.0f} MB", flush=True)
             raw = buf.getvalue()
             if raw[:2] == b"\x1f\x8b":
                 raw = gzip.decompress(raw)
@@ -79,52 +84,57 @@ def _split_values(text):
     return next(csv.reader([text], quotechar="'", escapechar="\\", skipinitialspace=True))
 
 
-def parse_arff(text):
-    attrs, data_lines, in_data = [], [], False
-    for line in io.StringIO(text):
+def _parse_header(header):
+    attrs = []
+    for line in io.StringIO(header):
         s = line.strip()
-        if not s or s.startswith("%"):
+        if not s.lower().startswith("@attribute"):
             continue
-        if in_data:
-            data_lines.append(s)
-            continue
-        low = s.lower()
-        if low.startswith("@attribute"):
-            rest = s[len("@attribute"):].strip()
-            if rest[0] in "'\"":
-                q = rest[0]
-                end = rest.index(q, 1)
-                while rest[end - 1] == "\\":
-                    end = rest.index(q, end + 1)
-                name, typ = _unquote(rest[: end + 1]), rest[end + 1:].strip()
-            else:
-                name, typ = rest.split(None, 1)
-            if typ.startswith("{"):
-                cats = [_unquote(c) for c in _split_values(typ.strip()[1:-1])]
-                attrs.append((name, "nominal", cats))
-            else:
-                attrs.append((name, typ.split()[0].lower(), None))
-        elif low.startswith("@data"):
-            in_data = True
+        rest = s[len("@attribute"):].strip()
+        if rest[0] in "'\"":
+            q = rest[0]
+            end = rest.index(q, 1)
+            while rest[end - 1] == "\\":
+                end = rest.index(q, end + 1)
+            name, typ = _unquote(rest[: end + 1]), rest[end + 1:].strip()
+        else:
+            name, typ = rest.split(None, 1)
+        if typ.startswith("{"):
+            attrs.append((name, "nominal", [_unquote(c) for c in _split_values(typ.strip()[1:-1])]))
+        else:
+            attrs.append((name, typ.split()[0].lower(), None))
+    return attrs
+
+
+def parse_arff(text):
+    m = re.search(r"^[ \t]*@data[ \t]*$", text, flags=re.IGNORECASE | re.MULTILINE)
+    attrs = _parse_header(text[: m.start()])
     names = [a[0] for a in attrs]
-    rows = []
-    for s in data_lines:
-        if s.startswith("{"):  # formato disperso: {idx valor, ...}
+    body = re.sub(r"^[ \t]*%.*\n?", "", text[m.end():], flags=re.MULTILINE)
+    first = next((ln.strip() for ln in body.splitlines() if ln.strip()), "")
+    if first.startswith("{"):  # formato disperso (raro): lector lento en Python
+        rows = []
+        for ln in body.splitlines():
+            ln = ln.strip()
+            if not ln:
+                continue
             row = ["0"] * len(names)
-            body = s[1:-1].strip()
-            if body:
-                for item in _split_values(body):
-                    idx, val = item.strip().split(None, 1)
-                    row[int(idx)] = val
-        else:
-            row = _split_values(s)
-        rows.append(row)
-    df = pd.DataFrame(rows, columns=names, dtype=object)
+            for item in _split_values(ln[1:-1].strip()) if ln[1:-1].strip() else []:
+                idx, val = item.strip().split(None, 1)
+                row[int(idx)] = val
+            rows.append(row)
+        df = pd.DataFrame(rows, columns=names, dtype=object).replace("?", None)
+    else:  # formato denso: lector en C de pandas (rápido)
+        df = pd.read_csv(io.StringIO(body), header=None, names=names, quotechar="'", escapechar="\\",
+                         skipinitialspace=True, dtype=str, na_values=["?"], keep_default_na=False,
+                         skip_blank_lines=True)
     for name, typ, _ in attrs:
-        col = df[name].map(lambda v: None if v is None or str(v).strip() == "?" else _unquote(str(v)))
         if typ in ("numeric", "real", "integer"):
-            df[name] = pd.to_numeric(col, errors="coerce")
+            df[name] = pd.to_numeric(df[name], errors="coerce")
         else:
+            col = df[name].astype(object)
+            mask = col.notna()
+            col[mask] = col[mask].astype(str).str.strip().str.replace(r'^"(.*)"$', r"\1", regex=True)
             df[name] = col
     return df, attrs
 
@@ -145,7 +155,10 @@ def fetch_task(task_id):
     drop |= set(filter(None, str(desc.get("ignore_attribute") or "").split(",")))
     drop.discard(target)
 
-    df, attrs = parse_arff(get(desc["url"]))
+    print("   bajando datos...", flush=True)
+    raw = get(desc["url"])
+    print(f"   leyendo ARFF ({len(raw) / 1e6:.1f} MB)...", flush=True)
+    df, attrs = parse_arff(raw)
     split_df, _ = parse_arff(get(splits_url))
     split_df.columns = [c.lower() for c in split_df.columns]
     for c in ("rowid", "repeat", "fold"):
@@ -200,7 +213,7 @@ def verify(name, df, split_df, schema, meta):
 def main():
     meta = pd.read_csv(META)
     meta = meta[meta.is_classification]
-    names = [a for a in sys.argv[1:] if not a.startswith("--")] or sorted(meta.dataset_name.unique())
+    names = [a for a in sys.argv[1:] if not a.startswith("--")] or list(meta.groupby("dataset_name").num_instances.first().sort_values().index)
     OUT.mkdir(exist_ok=True)
     man_path = OUT / "manifest.json"
     manifest = json.loads(man_path.read_text()) if man_path.exists() else {}
@@ -214,6 +227,7 @@ def main():
             print(f"OK  {name:45s} ya descargado y verificado (usa --force para repetir)")
             continue
         t0 = time.time()
+        print(f"--> {name} (task {tid}, {int(rows.iloc[0].num_instances)} filas x {int(rows.iloc[0].num_features)} columnas)", flush=True)
         try:
             df, split_df, schema = fetch_task(tid)
         except Exception as e:
