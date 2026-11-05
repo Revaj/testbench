@@ -78,6 +78,7 @@ Fecha del plan: 2026-11-05. Autor: Javier Rizo + Claude.
 | MLP-VOS | El mismo MLP **con** VOS (solo) | Experimento VOS |
 | R2 | R1 + MLP sin VOS como 4.ª base | Control |
 | R3 | R1 + MLP-VOS como 4.ª base | Experimento VOS dentro del stack |
+| LR-SMOTE | Regresión logística + SMOTE (NumPy) con corrección de prior | Tercera receta, pedida por Javier el 2026-11-05 |
 
 La comparación que responde "¿sirve VOS?" es **MLP-VOS vs MLP** y **R3 vs R2**: mismas semillas, mismos folds, mismo código salvo el término VOS.
 
@@ -153,9 +154,9 @@ legacy/
 - [x] 1. Javier crea el repo en GitHub y pasa owner/nombre. Claude lo conecta y sube el esqueleto + este PLAN.md + `legacy/`.
 - [~] 2. (Lista: hecha → `bench/tabarena_v0.1_clasificacion.csv`. Datos: pendiente.) Conseguir la lista de tareas de clasificación de TabArena-v0.1 (metadata pública) y los datos (§4). Verificar huellas.
 - [ ] 3. `splits.py` + `run.py` + `aggregate.py`; probar con RF y R0 en 2–3 datasets.
-- [ ] 4. Implementar R1 (3 bases + meta OOF) y R1-AVG. Elegir la base "pequeña" **solo** con el banco de desarrollo.
-- [ ] 5. Implementar `mlp_vos.py` (con y sin VOS). Prueba unitaria: pérdida baja, muestreo de outliers en baja verosimilitud, `predict_proba` válido.
-- [ ] 6. Pruebas de borde y peor caso (§9). Medir tiempos y pickle. Ajustar presupuestos si algo rompe límites (decisión documentada).
+- [x] 4. Implementar R1 (3 bases + meta OOF) y R1-AVG. Elegir la base "pequeña" **solo** con el banco de desarrollo.
+- [x] 5. Implementar `mlp_vos.py` (con y sin VOS). Prueba unitaria: pérdida baja, muestreo de outliers en baja verosimilitud, `predict_proba` válido.
+- [x] 6. Pruebas de borde y peor caso (§9). Medir tiempos y pickle. Ajustar presupuestos si algo rompe límites (decisión documentada).
 - [ ] 7. Correr todas las variantes de §5 con el protocolo de §3.
 - [ ] 8. `aggregate.py` → `results/summary.md`; aplicar reglas de §8.
 - [ ] 9. README final: medido / pendiente / hipótesis; hardware; desviaciones del protocolo oficial.
@@ -167,6 +168,16 @@ legacy/
 - 2026-11-05: Repo `Revaj/testbench` creado; esqueleto subido (paso 1). Siguiente: paso 2 (lista de tareas de clasificación de TabArena-v0.1 y datos).
 - 2026-11-05: Lista oficial obtenida de github.com/autogluon/tabarena (Apache-2.0, commit 1fa0a62), archivo `packages/tabarena/src/tabarena/benchmark/task/metadata/sources/data/TabArena-v0.1_tasks_metadata.csv`. Clasificación = **38 datasets: 30 binarios (métrica roc_auc) y 8 multiclase (log_loss)**, task IDs de OpenML 363613–363712; <2,500 filas → 30 splits (10×3), resto → 9 (3×3). Copia resumida en `bench/tabarena_v0.1_clasificacion.csv`. Coincide exactamente con los 38 del reto del curso (30 bin + 8 multi con 3/5/8 clases, 4–1,776 columnas): **hipótesis no verificada** de que son los mismos datasets; la candidata para dataset_37 (3 clases, AUC 0.49) sería hiva_agnostic (3 clases, 1,617 columnas, clase minoritaria 1.1 %). Los splits oficiales son los de cada task de OpenML: se usarán esos en vez de replicarlos. Siguiente: descargar datos+splits desde la máquina de Javier (OpenML da 403 desde el sandbox).
 - 2026-11-05: `bench/fetch_data.py` escrito (solo urllib + pandas; parser ARFF propio probado con datos simulados, no con OpenML real porque el sandbox no llega). Siguiente: Javier lo corre, revisa que salga 38/38 verificados y sube `data/manifest.json` como `bench/data_manifest.json` (los datos no van al repo).
+
+- 2026-11-05: Recetas implementadas en `recipe/tabular.py` sin mirar ningún dataset (Javier pidió hacerlas "sin datos",
+  ignorando lo anterior): R1, R1-AVG, R2, R3, MLP, MLP-VOS, LR-SMOTE y bases solas. Cambios respecto a §6/§7, decididos por
+  regla y no con datos: base pequeña = ExtraTrees (no se usó el banco de desarrollo para elegirla); target encoding con
+  `sklearn.preprocessing.TargetEncoder` (cross-fitting); OOF con >30k filas sobre submuestra de 30k; HGB limita a 256
+  columnas numéricas (F de ANOVA en el fold) porque con 1,776 columnas el binning pasaba de 5 MB y el fit de 60 s; MLP en
+  dos pasadas (la primera fija épocas, la segunda reentrena con VOS desde el 40 % — sin esto el early stopping guardaba
+  pesos de antes de VOS y MLP-VOS salía idéntica a MLP). Pruebas sintéticas: bordes 40/40 en sklearn 1.4.2/1.6.1/1.9.1,
+  gradcheck VOS OK, peor caso ≤ 43 s y ≤ 2.6 MB (tabla en README). Entregables de un archivo en `submissions/`.
+  Siguiente: Javier corre `bench/fetch_data.py`; luego pasos 3, 7, 8, 9.
 
 ## Fuentes
 
