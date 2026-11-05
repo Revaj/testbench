@@ -131,13 +131,15 @@ README.md            # qué es, cómo reproducir, resultados: medido / pendiente
 PLAN.md              # este documento
 requirements.txt     # versiones fijadas (numpy, pandas, scikit-learn; runner aparte)
 recipe/
-  receta_stacking.py     # R1 (build_model) — solo numpy/pandas/sklearn
-  mlp_vos.py         # MLP NumPy con/sin VOS
+  stacking.py        # receta de stacking (R1, R1-AVG, bases solas) — autocontenido
+  mlp_vos.py         # MLP NumPy con/sin VOS — autocontenido
+  logistic_smote.py  # logística + SMOTE — autocontenido
 bench/
   fetch_data.py      # descarga + verificación (md5, forma, clases)
   splits.py          # réplica de las particiones de TabArena-v0.1
   run.py             # corre una variante en todos los datasets/folds; guarda JSON crudo
   aggregate.py       # métricas por dataset/clase, Elo, rangos, IC bootstrap
+  variants.py        # todas las variantes (R2/R3 = stacking + MLPBase externa)
   stress.py          # 100k filas, 1,800 columnas, tiempos y tamaño de pickle
   edge.py            # casos de borde
 results/
@@ -184,6 +186,12 @@ legacy/
   (antes la verificación habría marcado DIF y la evaluación habría corrido 3× más particiones). También descarga en
   paralelo (`--jobs`, 4 por defecto). Lista de enlaces directos en `bench/DESCARGAS.md` / `bench/descargas.csv`, con
   `dataset_id` tomado de `curated_tabarena_dataset_metadata.csv` del repo oficial.
+
+- 2026-11-06: A pedido de Javier, `recipe/tabular.py` se dividió en tres recetas autocontenidas (`recipe/stacking.py`,
+  `recipe/mlp_vos.py`, `recipe/logistic_smote.py`) y se borraron `tabular.py`, `submissions/` y `tools/`. El código se
+  copió tal cual: las 10 variantes predicen lo mismo que antes (diferencia máxima 1.3e-13, redondeo). R2/R3 = stacking con
+  `extra_bases={"mlp": MLPBase(...)}`, armadas en `bench/variants.py`. Bordes 40/40 en sklearn 1.4.2/1.6.1/1.9.1; gradcheck OK;
+  cada archivo corre solo en una carpeta vacía y su pickle se recarga en un proceso nuevo.
 
 ## Fuentes
 

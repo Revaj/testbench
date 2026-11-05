@@ -3,7 +3,7 @@ import sys
 from pathlib import Path
 import numpy as np
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "recipe"))
-import tabular as T
+import mlp_vos as T
 
 rng = np.random.default_rng(0)
 K, d, B = 3, 7, 16

@@ -8,19 +8,27 @@ los datasets reales.** Plan completo, decisiones y bitácora: [`PLAN.md`](PLAN.m
 
 ## Recetas
 
-Todo vive en [`recipe/tabular.py`](recipe/tabular.py); `VARIANT` elige la receta. En
-[`submissions/`](submissions/) hay copias de un solo archivo listas para entregar
-(`build_model()` → `fit` → `predict_proba`), generadas con `python tools/make_submissions.py`.
+Tres archivos autocontenidos en [`recipe/`](recipe/), cada uno listo para entregar tal cual
+(`build_model()` → `fit` → `predict_proba`, columnas en el orden de `classes_`):
 
-| Archivo | VARIANT | Qué es |
+| Archivo | Qué es |
+|---|---|
+| [`recipe/stacking.py`](recipe/stacking.py) | Stacking: regresión logística L2 + HistGradientBoosting + ExtraTrees, cada una con su preprocesamiento; meta-modelo logístico L2 entrenado solo con predicciones OOF |
+| [`recipe/mlp_vos.py`](recipe/mlp_vos.py) | MLP en NumPy con VOS (Virtual Outlier Synthesis) |
+| [`recipe/logistic_smote.py`](recipe/logistic_smote.py) | Regresión logística + SMOTE (implementado en NumPy) con corrección de prior |
+
+Las variantes de comparación se arman en [`bench/variants.py`](bench/variants.py) sin duplicar código:
+
+| Variante | Cómo se construye | Para qué |
 |---|---|---|
-| `submissions/receta_stacking.py` | `R1` | Stacking: regresión logística L2 + HistGradientBoosting + ExtraTrees, cada una con su preprocesamiento; meta-modelo logístico L2 entrenado solo con predicciones OOF |
-| `submissions/receta_stacking_vos.py` | `R3` | R1 + MLP en NumPy con VOS como 4.ª base |
-| `submissions/mlp_vos.py` | `MLP-VOS` | MLP en NumPy con VOS (Virtual Outlier Synthesis), sola |
-| `submissions/logistic_smote.py` | `LR-SMOTE` | Regresión logística + SMOTE (implementado en NumPy) con corrección de prior |
-
-Variantes de control (mismo archivo, otro `VARIANT`): `R1-AVG` (promedio simple de las 3 bases),
-`R2` (R1 + MLP **sin** VOS, control de R3), `MLP` (control de MLP-VOS), `B-LIN`, `B-HGB`, `B-SMALL`.
+| `R1` | `stacking.build_model()` | Receta de stacking |
+| `R1-AVG` | `stacking.build_model("R1-AVG")` | Mismas 3 bases, promedio simple |
+| `R2` | stacking + `mlp_vos.MLPBase(use_vos=False)` como 4.ª base | Control de R3 |
+| `R3` | stacking + `mlp_vos.MLPBase(use_vos=True)` como 4.ª base | VOS dentro del stack |
+| `MLP` | `mlp_vos.build_model(use_vos=False)` | Control de MLP-VOS (misma red, sin VOS) |
+| `MLP-VOS` | `mlp_vos.build_model()` | MLP con VOS sola |
+| `LR-SMOTE` | `logistic_smote.build_model()` | Logística + SMOTE |
+| `B-LIN`, `B-HGB`, `B-SMALL` | `stacking.build_model("B-...")` | Cada base sola |
 
 ### Receta de stacking (R1)
 - **Codificación compartida, ajustada dentro de cada fold:** columnas categóricas con ≤ 30 valores van

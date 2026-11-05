@@ -18,10 +18,10 @@ import pandas as pd
 from sklearn.metrics import roc_auc_score, log_loss
 from sklearn.model_selection import train_test_split
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "recipe"))
-import tabular  # noqa: E402
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "bench"))
+from variants import VARIANTS  # noqa: E402
 
-ALL = list(tabular.VARIANTS)
+ALL = list(VARIANTS)
 
 
 def check(model, Xte, k):
@@ -77,7 +77,7 @@ def edge():
         for v in ALL:
             t = time.perf_counter()
             try:
-                m = tabular.build_model(v).fit(X, y)
+                m = VARIANTS[v]().fit(X, y)
                 ok, P, size = check(m, Xte, len(np.unique(y)))
                 ok = ok and list(m.classes_) == list(np.unique(y))
                 print(f"{'OK ' if ok else 'MAL'} {name:28s} {v:9s} {time.perf_counter()-t:5.1f}s {size/1e6:4.2f}MB", flush=True)
@@ -92,10 +92,11 @@ def smoke():
         Xtr, Xte, ytr, yte = train_test_split(X, y, test_size=0.2, stratify=y, random_state=0)
         for v in ALL:
             t = time.perf_counter()
-            m = tabular.build_model(v).fit(Xtr, ytr)
+            m = VARIANTS[v]().fit(Xtr, ytr)
             ok, P, size = check(m, Xte, k)
             name, val = metric(yte, P, m.classes_)
-            extra = getattr(m.models_[-1], "net_", None)
+            last = getattr(m, "base_", None) or getattr(m, "models_", [None])[-1]
+            extra = getattr(last, "net_", None)
             vos = f"vos_steps={extra.vos_steps_}" if extra is not None else ""
             print(f"{'OK ' if ok else 'MAL'} k={k} {v:9s} {name}={val:.4f} fit={time.perf_counter()-t:5.1f}s "
                   f"pkl={size/1e6:4.2f}MB {m.info_} {vos}", flush=True)
@@ -127,7 +128,7 @@ def stress(variants):
         Xtr, Xte, ytr, yte = train_test_split(X, y, test_size=0.2, stratify=y, random_state=0)
         for v in variants:
             t = time.perf_counter()
-            m = tabular.build_model(v).fit(Xtr, ytr)
+            m = VARIANTS[v]().fit(Xtr, ytr)
             tf = time.perf_counter() - t
             t = time.perf_counter(); ok, P, size = check(m, Xte, len(np.unique(y))); tp = time.perf_counter() - t
             mn, val = metric(yte, P, m.classes_)
