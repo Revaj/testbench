@@ -192,7 +192,6 @@ def main():
     df = load(a.raw)
     pdd = per_dataset(df, meta)
     variants = [v for v in ORDER if v in set(pdd.variant)] + sorted(set(pdd.variant) - set(ORDER))
-    complete = pdd.groupby("variant").dataset.nunique()
     pdd.to_csv(out / "por_dataset.csv", index=False)
 
     auc = pdd.pivot(index="dataset", columns="variant", values="auc")[variants]
@@ -204,7 +203,7 @@ def main():
     # métrica "como TabArena": AUC en binarios (mayor mejor) y log-loss en multiclase (menor mejor) -> error normalizado
     ta = pd.concat([1 - auc.loc[auc.index.intersection(binary)], ll.loc[ll.index.intersection(multi)]])
     rec = pd.DataFrame({
-        "datasets": complete.reindex(variants),
+        "datasets": auc.notna().sum(),
         "auc": auc.mean(), "auc_bin": auc.loc[auc.index.intersection(binary)].mean(),
         "auc_multi": auc.loc[auc.index.intersection(multi)].mean(),
         "logloss_multi": ll.loc[ll.index.intersection(multi)].mean(),
@@ -213,10 +212,13 @@ def main():
         "pickle_mb": pdd.groupby("variant").pickle_mb.mean(), "pickle_max": pdd.groupby("variant").pickle_max.max(),
         "errors": pdd.groupby("variant").errors.sum(),
     }).loc[variants]
-    full = auc.dropna()
+    # Un dataset con error cuenta como derrota en el Elo (como en TabArena, una falla no se descarta):
+    # se le asigna un puntaje peor que cualquier otro.
+    full = auc.fillna(-1.0)
+    ta_full = ta.loc[auc.index.intersection(ta.index)][variants].fillna(1e9)
     if len(variants) > 1 and len(full) >= 5:
         e1 = bt_elo(full, True)
-        e2 = bt_elo(ta.loc[full.index.intersection(ta.index)][variants].dropna(), False)
+        e2 = bt_elo(ta_full, False)
         rec["elo_auc"], rec["elo_auc_lo"], rec["elo_auc_hi"] = e1.elo, e1.elo_lo, e1.elo_hi
         rec["elo_tabarena"], rec["elo_ta_lo"], rec["elo_ta_hi"] = e2.elo, e2.elo_lo, e2.elo_hi
     rec.to_csv(out / "por_receta.csv")
@@ -229,6 +231,8 @@ def main():
              "multiclase = promedio uno-contra-todos de las clases presentes en test. Tiempos medidos en un contenedor "
              "de 2 CPU, una variante a la vez.\n")
     L.append("## Promedio por receta\n")
+    L.append("\"Datasets\" = datasets con resultado; si una receta falla en alguno, sus promedios son sobre los que sí "
+             "terminó (ver Errores), así que no son directamente comparables con los de 38.\n")
     L.append("| Receta | Datasets | ROC-AUC medio | AUC binarios | AUC multiclase | Log-loss multiclase | Rango medio (AUC) | "
              "Gana | Fit medio | Fit máx. | Pickle medio | Pickle máx. | Errores |")
     L.append("|---|---|---|---|---|---|---|---|---|---|---|---|---|")
@@ -239,7 +243,8 @@ def main():
     if "elo_auc" in rec:
         L.append("\n## Elo (Bradley-Terry por dataset, RF = 1000, IC 95 % por bootstrap)\n")
         L.append("Dos versiones: con ROC-AUC en los 38 datasets (como el curso) y \"como TabArena\" (ROC-AUC en binarios, "
-                 "log-loss en multiclase). Réplica propia del método, no el código oficial.\n")
+                 "log-loss en multiclase). Réplica propia del método, no el código oficial. Un dataset con error cuenta "
+                 "como derrota.\n")
         L.append("| Receta | Elo (ROC-AUC) | Elo (como TabArena) |")
         L.append("|---|---|---|")
         for v, r in rec.sort_values("elo_auc", ascending=False).iterrows():
