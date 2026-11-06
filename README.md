@@ -130,7 +130,7 @@ python tests/gradcheck_vos.py          # gradientes de la MLP y de VOS vs difere
 - **Reproducibilidad:** 11/11 variantes dan las mismas probabilidades en dos ajustes, en las tres versiones.
 - **Independencia del preprocesamiento:** 0 objetos compartidos entre las 4 bases del stacking, con MLP (R3) y con logística + SMOTE (R4).
 - **Gradientes:** error relativo máximo 1.4e-7.
-- **Peor caso** (sandbox de 2 CPU; el servidor del curso puede ser hasta 5× más lento):
+- **Peor caso** (sandbox de 2 CPU)
 
 | Caso sintético | R1 fit | R3 fit | MLP-VOS fit | LR-SMOTE fit | Pickle máx. |
 |---|---|---|---|---|---|
