@@ -1,0 +1,119 @@
+{
+ "dataset": "diabetes",
+ "variant": "MLP-VOS",
+ "task_id": 363629,
+ "splits": [
+  {
+   "repeat": 0,
+   "fold": 0,
+   "fit_s": 0.17397306100019705,
+   "pred_s": 0.006716667000091547,
+   "pickle_mb": 0.059253,
+   "auc": 0.7790495314591699,
+   "logloss": 0.5836041569709778,
+   "info": {
+    "use_vos": true,
+    "epochs": 10,
+    "vos_steps": 66
+   }
+  },
+  {
+   "repeat": 0,
+   "fold": 1,
+   "fit_s": 0.10619358399981138,
+   "pred_s": 0.0068217940001886745,
+   "pickle_mb": 0.059253,
+   "auc": 0.7902845993406444,
+   "logloss": 0.5765414237976074,
+   "info": {
+    "use_vos": true,
+    "epochs": 5,
+    "vos_steps": 33
+   }
+  },
+  {
+   "repeat": 0,
+   "fold": 2,
+   "fit_s": 0.2338580149998961,
+   "pred_s": 0.006666579000011552,
+   "pickle_mb": 0.059253,
+   "auc": 0.8268855547332301,
+   "logloss": 0.5021393895149231,
+   "info": {
+    "use_vos": true,
+    "epochs": 16,
+    "vos_steps": 110
+   }
+  },
+  {
+   "repeat": 1,
+   "fold": 0,
+   "fit_s": 0.10779062699975839,
+   "pred_s": 0.006658408000021154,
+   "pickle_mb": 0.059253,
+   "auc": 0.7769629280764313,
+   "logloss": 0.5362541675567627,
+   "info": {
+    "use_vos": true,
+    "epochs": 5,
+    "vos_steps": 33
+   }
+  },
+  {
+   "repeat": 1,
+   "fold": 1,
+   "fit_s": 0.11303899799986539,
+   "pred_s": 0.006935720000001311,
+   "pickle_mb": 0.059253,
+   "auc": 0.8035389894368565,
+   "logloss": 0.5591803789138794,
+   "info": {
+    "use_vos": true,
+    "epochs": 5,
+    "vos_steps": 33
+   }
+  },
+  {
+   "repeat": 1,
+   "fold": 2,
+   "fit_s": 0.11494553500006077,
+   "pred_s": 0.00649350499998036,
+   "pickle_mb": 0.059253,
+   "auc": 0.7674698795180723,
+   "logloss": 0.5804829597473145,
+   "info": {
+    "use_vos": true,
+    "epochs": 5,
+    "vos_steps": 33
+   }
+  },
+  {
+   "repeat": 2,
+   "fold": 0,
+   "fit_s": 0.1228342839999641,
+   "pred_s": 0.010182935000102589,
+   "pickle_mb": 0.059253,
+   "auc": 0.7754827423804078,
+   "logloss": 0.568011999130249,
+   "info": {
+    "use_vos": true,
+    "epochs": 5,
+    "vos_steps": 33
+   }
+  },
+  {
+   "repeat": 2,
+   "fold": 1,
+   "fit_s": 0.21730316299999686,
+   "pred_s": 0.0072801520000211895,
+   "pickle_mb": 0.059253,
+   "auc": 0.7907555675166521,
+   "logloss": 0.5293525457382202,
+   "info": {
+    "use_vos": true,
+    "epochs": 12,
+    "vos_steps": 88
+   }
+  }
+ ]
+}
