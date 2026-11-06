@@ -147,19 +147,31 @@ class CategoryCapper(TransformerMixin, BaseEstimator):
 
 
 class CountEncoder(TransformerMixin, BaseEstimator):
-    """log(1 + frecuencia en train) de cada categoría. Guarda a lo más `max_cats` conteos por columna;
-    las demás (de la cola o nunca vistas) reciben el conteo medio de la cola (0 si no hay cola)."""
+    """log(1 + frecuencia en train) de cada categoría. Guarda, de forma compacta (hash de 64 bits + conteo),
+    las categorías con al menos 2 filas, a lo más `max_total` sumando columnas y `max_cats` por columna;
+    las demás (cola, únicas o nunca vistas) reciben el conteo medio de la cola."""
 
-    def __init__(self, max_cats=5000):
+    def __init__(self, max_cats=1000, max_total=20_000):
         self.max_cats = max_cats
+        self.max_total = max_total
+
+    @staticmethod
+    def _hash(v):
+        return pd.util.hash_array(v.to_numpy(dtype=object), categorize=True)
 
     def fit(self, X, y=None):
         X = pd.DataFrame(X)
-        self.counts_, self.tail_ = [], []
+        cap = int(max(50, min(self.max_cats, self.max_total // max(1, X.shape[1]))))
+        self.keys_, self.vals_, self.tail_ = [], [], []
         for c in X.columns:
             vc = _as_str(X[c]).fillna("__nan__").value_counts()
-            self.counts_.append(vc.iloc[: self.max_cats])
-            self.tail_.append(float(vc.iloc[self.max_cats:].mean()) if len(vc) > self.max_cats else 0.0)
+            keep = vc[vc >= 2].iloc[:cap]
+            rest = vc.iloc[len(keep):]
+            h = self._hash(pd.Series(keep.index))
+            order = np.argsort(h)
+            self.keys_.append(h[order])
+            self.vals_.append(np.log1p(keep.to_numpy(dtype=np.float32))[order])
+            self.tail_.append(float(np.log1p(rest.mean())) if len(rest) else 0.0)
         self.n_features_in_ = X.shape[1]
         return self
 
@@ -167,8 +179,14 @@ class CountEncoder(TransformerMixin, BaseEstimator):
         X = pd.DataFrame(X)
         out = np.zeros(X.shape, dtype=np.float32)
         for j, c in enumerate(X.columns):
-            v = _as_str(X[c]).fillna("__nan__")
-            out[:, j] = np.log1p(v.map(self.counts_[j]).fillna(self.tail_[j]).to_numpy(dtype=np.float32))
+            keys = self.keys_[j]
+            h = self._hash(_as_str(X[c]).fillna("__nan__"))
+            if len(keys) == 0:
+                out[:, j] = self.tail_[j]
+                continue
+            pos = np.minimum(np.searchsorted(keys, h), len(keys) - 1)
+            hit = keys[pos] == h
+            out[:, j] = np.where(hit, self.vals_[j][pos], self.tail_[j])
         return out
 
 
@@ -388,6 +406,9 @@ class VOSNet:
                     s[k] = b2 * s[k] + (1 - b2) * gk * gk
                     mh, sh = m[k] / (1 - b1 ** t), s[k] / (1 - b2 ** t)
                     self.p[k] = (self.p[k] - lr * mh / (np.sqrt(sh) + 1e-8)).astype(np.float32)
+            for k in ("W1", "W2", "W3"):  # evita números subnormales (hacen muy lentas las multiplicaciones)
+                w = self.p[k]
+                w[np.abs(w) < 1e-30] = 0.0
             if val is not None:
                 Xv, yv = val
                 Pv = self.predict_proba(Xv)
@@ -436,8 +457,8 @@ class MLPBase(BaseEstimator):
                 max_categories=self.OHE_MAX_CATS, sparse_output=False, dtype=np.float32)), low))
         if high:
             parts.append(("high_te", make_pipeline(CategoryCapper(self.HC_MAX_CATS, min_count=2), _target_encoder(),
-                                                   StandardScaler()), high))
-            parts.append(("high_cnt", make_pipeline(CountEncoder(), StandardScaler()), high))
+                                                   StandardScaler(), Clipper(5.0)), high))
+            parts.append(("high_cnt", make_pipeline(CountEncoder(), StandardScaler(), Clipper(5.0)), high))
         return ColumnTransformer(parts, sparse_threshold=0.0) if parts else None
 
     def fit(self, X, y, K, budget=MLP_BUDGET):

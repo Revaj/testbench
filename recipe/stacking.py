@@ -40,6 +40,7 @@ VARIANT = "R1"
 SEED = 0
 
 SIZE_BUDGET = 4_400_000      # bytes del pickle completo (límite duro: 5 MB)
+SIZE_CAP = 4_600_000         # tope medido: si el pickle real lo pasa, el HGB se reajusta con menos árboles
 ET_BUDGET = 700_000
 EXTRA_BUDGET = 600_000       # presupuesto por defecto de cada base externa
 HGB_BYTES_PER_TREE = 4_500
@@ -156,19 +157,31 @@ class CategoryCapper(TransformerMixin, BaseEstimator):
 
 
 class CountEncoder(TransformerMixin, BaseEstimator):
-    """log(1 + frecuencia en train) de cada categoría. Guarda a lo más `max_cats` conteos por columna;
-    las demás (de la cola o nunca vistas) reciben el conteo medio de la cola (0 si no hay cola)."""
+    """log(1 + frecuencia en train) de cada categoría. Guarda, de forma compacta (hash de 64 bits + conteo),
+    las categorías con al menos 2 filas, a lo más `max_total` sumando columnas y `max_cats` por columna;
+    las demás (cola, únicas o nunca vistas) reciben el conteo medio de la cola."""
 
-    def __init__(self, max_cats=5000):
+    def __init__(self, max_cats=1000, max_total=20_000):
         self.max_cats = max_cats
+        self.max_total = max_total
+
+    @staticmethod
+    def _hash(v):
+        return pd.util.hash_array(v.to_numpy(dtype=object), categorize=True)
 
     def fit(self, X, y=None):
         X = pd.DataFrame(X)
-        self.counts_, self.tail_ = [], []
+        cap = int(max(50, min(self.max_cats, self.max_total // max(1, X.shape[1]))))
+        self.keys_, self.vals_, self.tail_ = [], [], []
         for c in X.columns:
             vc = _as_str(X[c]).fillna("__nan__").value_counts()
-            self.counts_.append(vc.iloc[: self.max_cats])
-            self.tail_.append(float(vc.iloc[self.max_cats:].mean()) if len(vc) > self.max_cats else 0.0)
+            keep = vc[vc >= 2].iloc[:cap]
+            rest = vc.iloc[len(keep):]
+            h = self._hash(pd.Series(keep.index))
+            order = np.argsort(h)
+            self.keys_.append(h[order])
+            self.vals_.append(np.log1p(keep.to_numpy(dtype=np.float32))[order])
+            self.tail_.append(float(np.log1p(rest.mean())) if len(rest) else 0.0)
         self.n_features_in_ = X.shape[1]
         return self
 
@@ -176,8 +189,14 @@ class CountEncoder(TransformerMixin, BaseEstimator):
         X = pd.DataFrame(X)
         out = np.zeros(X.shape, dtype=np.float32)
         for j, c in enumerate(X.columns):
-            v = _as_str(X[c]).fillna("__nan__")
-            out[:, j] = np.log1p(v.map(self.counts_[j]).fillna(self.tail_[j]).to_numpy(dtype=np.float32))
+            keys = self.keys_[j]
+            h = self._hash(_as_str(X[c]).fillna("__nan__"))
+            if len(keys) == 0:
+                out[:, j] = self.tail_[j]
+                continue
+            pos = np.minimum(np.searchsorted(keys, h), len(keys) - 1)
+            hit = keys[pos] == h
+            out[:, j] = np.where(hit, self.vals_[j][pos], self.tail_[j])
         return out
 
 
@@ -248,8 +267,8 @@ class LinearBase(_PriorFallback, BaseEstimator):
                 max_categories=self.OHE_MAX_CATS, dtype=np.float32)), low))
         if high:
             parts.append(("high_te", make_pipeline(CategoryCapper(self.HC_MAX_CATS, min_count=2), _target_encoder(),
-                                                   StandardScaler()), high))
-            parts.append(("high_cnt", make_pipeline(CountEncoder(), StandardScaler()), high))
+                                                   StandardScaler(), Clipper(5.0)), high))
+            parts.append(("high_cnt", make_pipeline(CountEncoder(), StandardScaler(), Clipper(5.0)), high))
         self.K_ = K
         if not parts:
             self.ct_ = None
@@ -278,7 +297,7 @@ class HGBBase(_PriorFallback, BaseEstimator):
     HC_MAX_CATS = 2_000
     MAX_NUM_FEATS = 256
 
-    def fit(self, X, y, K, budget=2_500_000):
+    def fit(self, X, y, K, budget=2_500_000, iter_cap=None):
         num, cat = _raw_types(X)
         if len(num) > self.MAX_NUM_FEATS:
             A = X[num].to_numpy(dtype=np.float32)
@@ -312,6 +331,9 @@ class HGBBase(_PriorFallback, BaseEstimator):
             lr = float(np.clip(50.0 / max_iter, 0.05, 0.2))
         else:  # pocos datos: sin early stopping, pocas iteraciones y aprendizaje lento
             max_iter, lr = min(max_iter, 150), 0.05
+        if iter_cap is not None:
+            # misma configuración y misma semilla con menos iteraciones: los primeros árboles son los mismos
+            max_iter = int(max(10, min(max_iter, iter_cap)))
         self.hgb_ = HistGradientBoostingClassifier(
             learning_rate=lr, max_iter=max_iter, max_leaf_nodes=31,
             min_samples_leaf=int(min(20, max(2, n // 50))), l2_regularization=1.0,
@@ -447,7 +469,40 @@ class StackingModel(ClassifierMixin, BaseEstimator):
             self.info_.update(oof_rows=int(len(yo)), folds=n_splits, meta=self.meta_ is not None)
 
         self.models_ = self._fit_bases(X, y, K, final=True)
+        self._enforce_size(X, y, K)
         return self
+
+    def _enforce_size(self, X, y, K):
+        """El presupuesto del HGB es una estimación; aquí se mide el pickle real. Si pasa de SIZE_CAP, se
+        reajusta el HGB (mismas filas, misma semilla) con menos iteraciones, proporcional al exceso."""
+        if "hgb" not in self.bases_:
+            return
+        j = self.bases_.index("hgb")
+        for _ in range(3):
+            total = _size(self)
+            if total <= SIZE_CAP:
+                break
+            hgb = self.models_[j]
+            if getattr(hgb, "hgb_", None) is None:
+                break
+            size_h = _size(hgb)
+            keep = max(0.05, (size_h - (total - SIZE_CAP) - 50_000) / size_h)
+            n_iter = int(hgb.hgb_.n_iter_)
+            if n_iter <= 10:
+                break
+            self.models_[j] = HGBBase().fit(X, y, K, iter_cap=int(n_iter * keep))
+            self.info_["hgb_iter_recortado"] = [n_iter, int(self.models_[j].hgb_.n_iter_)]
+        total = _size(self)
+        if total > SIZE_CAP and "et" in self.bases_:
+            # último recurso: un ExtraTrees con menos árboles (el promedio de los primeros m árboles es un
+            # bosque válido, igual que si se hubiera entrenado con n_estimators = m)
+            et = self.models_[self.bases_.index("et")].et_
+            size_e = _size(et)
+            m = int(max(10, len(et.estimators_) * max(0.05, (size_e - (total - SIZE_CAP) - 50_000) / size_e)))
+            et.estimators_ = et.estimators_[:m]
+            et.n_estimators = m
+            self.info_["et_arboles_recortado"] = m
+        self.info_["pickle_bytes"] = _size(self)
 
     def branch_probas(self, X):
         return dict(zip(self.bases_, self._predict_bases(self.models_, _frame(X))))

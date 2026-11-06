@@ -207,6 +207,23 @@ legacy/
   pedida por Javier). Su preprocesamiento y su SMOTE quedan dentro de su fit (en el stacking: solo filas de
   entrenamiento de cada fold). Bordes 4/4, reproducible, 0 objetos compartidos, peor caso 31.6 s y 3.07 MB.
 
+- 2026-11-06: Pasada rápida (1.ª partición × 38 datasets) antes del protocolo completo. Hallazgos y ajustes (todos por
+  límites o errores, ninguno por mirar el AUC):
+  1. Pickle de R3 en kddcup09_appetency = 5.40 MB (> 5 MB). Causa: cada base guardaba hasta 5,000 conteos por columna
+     como Series de texto (~0.84 MB por base). `CountEncoder` ahora guarda hash de 64 bits + conteo, solo categorías con
+     ≥ 2 filas, ≤ 20,000 en total. Además el stacking mide el pickle real al final: si pasa de 4.6 MB reajusta el HGB con
+     menos iteraciones y, si no basta, recorta árboles del ExtraTrees. kddcup R3 quedó en 3.08 MB.
+  2. Con el nuevo conteo, el estandarizado de target encoding / frecuencias producía valores de hasta 155 → la MLP se
+     volvía 15× más lenta (pesos subnormales). Ahora esas columnas se recortan a ±5 en logística, MLP y SMOTE, y la MLP
+     pone a 0 pesos < 1e-30 al final de cada época.
+  3. Tiempos: correr otro proceso pesado a la vez vuelve al HGB (OpenMP) hasta 100× más lento. El benchmark corre solo,
+     sin nada en paralelo. Los resultados de la pasada rápida se descartaron.
+  4. R0 (receta original) falla en 5 datasets con "window shape cannot be larger than input array shape" (bug conocido,
+     §2 punto 4). Se deja tal cual: es la referencia.
+  5. hiva_agnostic: todas las recetas ≈ 0.5 de AUC e incluso un Bernoulli NB / logística simples con CV dan 0.44–0.46
+     (activo vs. inactivo). Sin señal aprendible en estos datos tal como se descargaron; posible problema del dataset o
+     de la descarga, sin verificar. Se reporta aparte.
+
 ## Fuentes
 
 - TabArena: A Living Benchmark for Machine Learning on Tabular Data — https://arxiv.org/abs/2506.16791
