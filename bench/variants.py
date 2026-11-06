@@ -11,6 +11,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "recipe"))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+import extratrees  # noqa: E402
+import knn_smote  # noqa: E402
 import logistic_smote  # noqa: E402
 import mlp_vos  # noqa: E402
 import stacking  # noqa: E402
@@ -29,6 +31,11 @@ VARIANTS = {
     "LR-SMOTE": lambda: logistic_smote.build_model(),
     # Demostrativa: logística + SMOTE-NC como 4.a rama del stacking, con su propio pipeline encapsulado.
     "R4": lambda: stacking.build_model("R1", extra_bases={"lr_smote": logistic_smote.LRSmoteBase()}),
+    # kNN con/sin SMOTE y ExtraTrees con/sin pesos balanceados (cada par: misma receta, una sola diferencia)
+    "KNN-SMOTE": lambda: knn_smote.build_model(use_smote=True),
+    "KNN": lambda: knn_smote.build_model(use_smote=False),
+    "ET-BAL": lambda: extratrees.build_model(class_weight="balanced"),
+    "ET": lambda: extratrees.build_model(class_weight=None),
     "B-LIN": lambda: stacking.build_model("B-LIN"),
     "B-HGB": lambda: stacking.build_model("B-HGB"),
     "B-SMALL": lambda: stacking.build_model("B-SMALL"),

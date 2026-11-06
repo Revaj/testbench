@@ -242,6 +242,14 @@ legacy/
     (resultado negativo documentado).
   - R4 (demostrativa) vs. R1: −0.0007 [−0.0017, +0.0000] → la rama con SMOTE no aporta.
   Nota: R2 tiene el mejor Elo/rango, pero su diferencia media con R1 es −0.0001 [−0.0018, +0.0011] y tarda el doble.
+- Corrección: el stacking (R1) NO usa pesos de clase (`class_weight`/`sample_weight`); solo la receta legacy lo hacía.
+- Dos recetas nuevas, cada una con su control de una sola diferencia, escritas sin mirar los datos del benchmark:
+  `recipe/knn_smote.py` (KNN-SMOTE vs. KNN) y `recipe/extratrees.py` (ET-BAL con `class_weight="balanced"` vs. ET).
+  Pruebas sintéticas: casos raros 16/16, reproducibilidad 4/4, peor caso ≤ 1.5 s de fit y pickle ≤ 4.34 MB.
+  Ajuste hecho tras la prueba sintética de peor caso (no con datos del benchmark): kNN daba probabilidades
+  exactamente 0 y log-loss de 9.9 en un caso de 3 clases → se suaviza con un vecino virtual que vota con el prior,
+  (k·p + π)/(k + 1); log-loss bajó a 1.50 (KNN-SMOTE) y 0.33 (KNN). En binario no cambia la AUC.
+  **Pendiente:** correrlas en el benchmark (`bash bench/run_all.sh` ya las incluye; instructivo en BENCHMARK.md).
 
 ## Fuentes
 

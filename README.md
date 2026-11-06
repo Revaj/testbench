@@ -66,9 +66,12 @@ python bench/validate_data.py         # 38/38 válidos
 bash bench/run_all.sh                 # todas las variantes, reanudable; luego genera results/
 ```
 
+Instructivo completo, paso a paso (correr solo algunas variantes, reanudar, agregar y leer resultados):
+[`BENCHMARK.md`](BENCHMARK.md).
+
 ## Recetas
 
-Tres archivos autocontenidos en [`recipe/`](recipe/), cada uno listo para entregar tal cual
+Cinco archivos autocontenidos en [`recipe/`](recipe/), cada uno listo para entregar tal cual
 (`build_model()` → `fit` → `predict_proba`, columnas en el orden de `classes_`):
 
 | Archivo | Qué es |
@@ -76,6 +79,8 @@ Tres archivos autocontenidos en [`recipe/`](recipe/), cada uno listo para entreg
 | [`recipe/stacking.py`](recipe/stacking.py) | Stacking: regresión logística L2 + HistGradientBoosting + ExtraTrees, cada una con su preprocesamiento; meta-modelo logístico L2 entrenado solo con predicciones OOF |
 | [`recipe/mlp_vos.py`](recipe/mlp_vos.py) | MLP en NumPy con VOS (Virtual Outlier Synthesis) |
 | [`recipe/logistic_smote.py`](recipe/logistic_smote.py) | Regresión logística + SMOTE (implementado en NumPy) con corrección de prior |
+| [`recipe/knn_smote.py`](recipe/knn_smote.py) | kNN con SMOTE (o sin él, como control); preprocesamiento propio para distancias |
+| [`recipe/extratrees.py`](recipe/extratrees.py) | ExtraTrees con `class_weight="balanced"` (o sin pesos, como control) |
 
 Las variantes de comparación se arman en [`bench/variants.py`](bench/variants.py) sin duplicar código:
 
@@ -89,6 +94,10 @@ Las variantes de comparación se arman en [`bench/variants.py`](bench/variants.p
 | `MLP-VOS` | `mlp_vos.build_model()` | MLP con VOS sola |
 | `LR-SMOTE` | `logistic_smote.build_model()` | Logística + SMOTE |
 | `R4` | stacking + `logistic_smote.LRSmoteBase()` como 4.ª base | **Demostrativa:** cómo se encapsula una rama con SMOTE dentro del stacking |
+| `KNN-SMOTE` | `knn_smote.build_model(use_smote=True)` | kNN + SMOTE (**aún sin correr en el benchmark**) |
+| `KNN` | `knn_smote.build_model(use_smote=False)` | Control de KNN-SMOTE (mismo kNN, sin SMOTE) |
+| `ET-BAL` | `extratrees.build_model(class_weight="balanced")` | ExtraTrees balanceado (**aún sin correr en el benchmark**) |
+| `ET` | `extratrees.build_model(class_weight=None)` | Control de ET-BAL (mismo bosque, sin pesos) |
 | `B-LIN`, `B-HGB`, `B-SMALL` | `stacking.build_model("B-...")` | Cada base sola |
 
 ### Principio: cada modelo tiene su propio preprocesamiento
@@ -155,6 +164,24 @@ interpolando un one-hot. Cada clase se lleva al tamaño de la mayoritaria (tope 
 cambia las proporciones de clase, los logits se corrigen al prior original (+ log π/π'), necesario para log-loss;
 en AUC binario no cambia el orden.
 
+### kNN + SMOTE
+kNN es el modelo donde SMOTE tiene más sentido: interpola en el mismo espacio de distancias donde kNN decide.
+Preprocesamiento propio para distancias: numéricas con mediana, estandarizado y recorte a ±5; indicadores de
+faltante; categóricas de ≤ 30 valores en one-hot escalado por 1/√2 (una categoría distinta pesa como una
+desviación estándar); alta cardinalidad con target encoding (validación cruzada) + frecuencia. Si quedan más de
+32 dimensiones, PCA a 32. SMOTE se aplica en ese espacio, solo con filas de entrenamiento. Reglas fijas por
+tamaño: k = √n / 2 (entre 5 y 50), pesos por distancia y, como kNN guarda sus ejemplos en el pickle, a lo más
+30,000 ejemplos o los que quepan en 3 MB (muestra estratificada). Las probabilidades se corrigen al prior
+original (π/π′) y se suavizan con un vecino virtual que vota con el prior, (k·p + π)/(k + 1): sin eso kNN da
+probabilidades exactamente 0, que disparan el log-loss en multiclase (en binario no cambia la AUC).
+
+### ExtraTrees balanceado
+El mismo bosque con y sin `class_weight="balanced"`: los errores en clases raras pesan más al elegir los
+cortes, sin inventar filas (a diferencia de SMOTE). Preprocesamiento propio y mínimo, porque los árboles no
+necesitan escalar: mediana + indicador de faltante en numéricas; categóricas como código ordinal por frecuencia
+(faltante = −1) y log de frecuencia para las de más de 30 valores. Tamaño acotado: árboles de 256 hojas,
+tantos como quepan en ~3.5 MB (entre 30 y 300), con a lo más 50,000 filas por árbol.
+
 ## Datos
 
 Los datos no se guardan en el repo (licencias de origen distintas). Se descargan de OpenML con:
@@ -201,12 +228,23 @@ python tests/gradcheck_vos.py          # gradientes de la MLP y de VOS vs difere
 
 R4 (demostrativa): 31.6 s / 15.6 s / 10.7 s / 3.3 s en los mismos cuatro casos; pickle máximo 3.07 MB.
 
+kNN y ExtraTrees en los mismos cuatro casos (fit; casos raros 16/16 y reproducibilidad 4/4):
+
+| Caso sintético | KNN-SMOTE | KNN | ET-BAL | ET | Pickle máx. |
+|---|---|---|---|---|---|
+| 100k × 39, 5 clases, alta cardinalidad | 1.0 s | 0.7 s | 1.5 s | 1.4 s | 4.12 MB |
+| 3,750 × 1,776, binario | 0.5 s | 0.5 s | 0.7 s | 0.8 s | 3.45 MB |
+| 3,850 × 1,617, 3 clases (una de 1 %) | 0.4 s | 0.4 s | 0.5 s | 0.6 s | 2.85 MB |
+| 150k × 10, binario desbalanceado | 0.3 s | 0.1 s | 1.2 s | 1.0 s | 4.34 MB |
+
+En kNN el costo está en `predict_proba` (hasta 2.7 s para 30k filas de test), no en el fit.
+
 ## Medido / pendiente / hipótesis
 
 | | Contenido |
 |---|---|
 | Medido | Las 10 variantes en los 38 datasets × particiones oficiales (sección Resultados); pruebas sintéticas de bordes, reproducibilidad, independencia y gradientes |
-| Pendiente | Comparar contra el leaderboard oficial de TabArena con su framework (nuestro Elo es una réplica propia y solo entre estas variantes); verificar el dataset hiva_agnostic contra la fuente; medir en la máquina del curso |
+| Pendiente | Correr KNN, KNN-SMOTE, ET y ET-BAL en el benchmark ([`BENCHMARK.md`](BENCHMARK.md)); comparar contra el leaderboard oficial de TabArena con su framework (nuestro Elo es una réplica propia y solo entre estas variantes); verificar el dataset hiva_agnostic contra la fuente; medir en la máquina del curso |
 | Hipótesis confirmada | VOS no mejora la clasificación dentro de la distribución (diferencias ≤ 0.0004, sin efecto o pérdida mínima) |
 | Sin verificar | Que el reto del curso use estos mismos 38 datasets (coinciden en número, tipo y columnas) y que su dataset_37 sea hiva_agnostic |
 

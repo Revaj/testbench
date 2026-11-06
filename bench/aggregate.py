@@ -13,12 +13,13 @@ import numpy as np
 import pandas as pd
 
 ROOT = Path(__file__).resolve().parent.parent
-ORDER = ["R1", "MLP-VOS", "LR-SMOTE", "R3", "R2", "R4", "R1-AVG", "MLP", "B-LIN", "B-HGB", "B-SMALL", "R0", "RF"]
+ORDER = ["R1", "MLP-VOS", "LR-SMOTE", "KNN-SMOTE", "ET-BAL", "R3", "R2", "R4", "R1-AVG", "MLP", "KNN", "ET", "B-LIN", "B-HGB", "B-SMALL", "R0", "RF"]
 LABEL = {
     "R1": "Stacking (R1)", "R3": "Stacking + MLP-VOS (R3)", "R4": "Stacking + LR-SMOTE (R4)",
     "R1-AVG": "Promedio 3 bases", "R2": "Stacking + MLP (R2)", "MLP-VOS": "MLP-VOS", "MLP": "MLP sin VOS",
     "LR-SMOTE": "Logística + SMOTE", "B-LIN": "Solo logística", "B-HGB": "Solo HGB", "B-SMALL": "Solo ExtraTrees",
     "R0": "Receta original (R0)", "RF": "Random forest (ref.)",
+    "KNN-SMOTE": "kNN + SMOTE", "KNN": "kNN sin SMOTE", "ET-BAL": "ExtraTrees balanceado", "ET": "ExtraTrees sin pesos",
 }
 SEED = 0
 
@@ -264,7 +265,8 @@ def main():
             L.append(f"| {LABEL.get(v, v)} | {r.elo_auc:.0f} [{r.elo_auc_lo:.0f}, {r.elo_auc_hi:.0f}] | "
                      f"{r.elo_tabarena:.0f} [{r.elo_ta_lo:.0f}, {r.elo_ta_hi:.0f}] |")
     comps = [("R1", "R0"), ("R1", "RF"), ("R1", "R1-AVG"), ("R2", "R1"), ("R3", "R1"), ("R3", "R2"), ("MLP-VOS", "MLP"),
-             ("R4", "R1"), ("LR-SMOTE", "B-LIN"), ("MLP-VOS", "RF"), ("LR-SMOTE", "RF")]
+             ("R4", "R1"), ("LR-SMOTE", "B-LIN"), ("MLP-VOS", "RF"), ("LR-SMOTE", "RF"),
+             ("KNN-SMOTE", "KNN"), ("ET-BAL", "ET"), ("KNN-SMOTE", "LR-SMOTE"), ("ET-BAL", "RF"), ("ET-BAL", "R1")]
     rows = [r for r in (paired(auc, x, y) for x, y in comps) if r]
     if rows:
         L.append("\n## Comparaciones pareadas (ROC-AUC, diferencia media por dataset, IC 95 % bootstrap)\n")

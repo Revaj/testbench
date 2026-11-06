@@ -4,7 +4,7 @@
 set -e
 cd "$(dirname "$0")/.."
 DATA=${DATA:-data}
-for V in "R1,MLP-VOS,LR-SMOTE" "R3" "R0,RF,MLP,R1-AVG" "R2" "R4"; do
+for V in "R1,MLP-VOS,LR-SMOTE" "R3" "R0,RF,MLP,R1-AVG" "R2" "R4" "KNN-SMOTE,KNN,ET-BAL,ET"; do
   python3 bench/run.py --data "$DATA" --variants "$V" --out results/raw
 done
 python3 bench/aggregate.py --raw results/raw --out results --title "TabArena-v0.1 (clasificación): resultados"
