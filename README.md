@@ -3,8 +3,68 @@
 Tres recetas de clasificación tabular (solo NumPy, pandas y scikit-learn; Python 3.11, scikit-learn ≥ 1.4)
 para evaluarse con una réplica manual del protocolo de TabArena-v0.1 (38 tareas de clasificación).
 
-**Estado: recetas implementadas y probadas solo con datos sintéticos. Todavía no hay resultados con
-los datasets reales.** Plan completo, decisiones y bitácora: [`PLAN.md`](PLAN.md).
+**Estado: evaluado en los 38 datasets de clasificación de TabArena-v0.1 con sus particiones oficiales
+(594 particiones por receta).** Resultados completos: [`results/summary.md`](results/summary.md). Plan completo, decisiones y bitácora: [`PLAN.md`](PLAN.md).
+
+## Resultados (TabArena-v0.1, clasificación)
+
+38 datasets (30 binarios, 8 multiclase), particiones oficiales de OpenML (10×3 en los de < 2,500 filas, 3×3 en el
+resto) = 594 ajustes por receta. ROC-AUC por dataset = promedio sobre sus particiones. Tiempos en un contenedor de
+2 CPU, una variante a la vez. Tablas por dataset y por clase, Elo y errores en [`results/summary.md`](results/summary.md);
+datos crudos por partición en `results/raw/`.
+
+![Promedios por receta](results/resumen_recetas.png)
+
+| Receta | ROC-AUC medio | Fit medio | Fit máx. | Pickle medio | Pickle máx. | Errores |
+|---|---|---|---|---|---|---|
+| **Stacking (R1)** | **0.8527** | 7.5 s | 67.1 s | 1.41 MB | 4.21 MB | 0 |
+| MLP-VOS | 0.8348 | 2.6 s | 33.4 s | 0.18 MB | 0.88 MB | 0 |
+| Logística + SMOTE | 0.8122 | 3.0 s | 56.6 s | 0.06 MB | 0.72 MB | 0 |
+| Stacking + MLP-VOS (R3) | 0.8523 | 15.4 s | 91.4 s | 1.58 MB | 4.35 MB | 0 |
+| Stacking + MLP sin VOS (R2) | 0.8525 | 13.4 s | 87.4 s | 1.58 MB | 4.35 MB | 0 |
+| Stacking + LR-SMOTE (R4, demostrativa) | 0.8520 | 15.4 s | 145.9 s | 1.45 MB | 4.50 MB | 0 |
+| Promedio simple de las 3 bases | 0.8493 | 1.9 s | 13.9 s | 1.41 MB | 4.21 MB | 0 |
+| MLP sin VOS | 0.8352 | 2.0 s | 29.7 s | 0.18 MB | 0.88 MB | 0 |
+| Receta original (R0, referencia) | 0.8591 en 33 datasets* | 5.8 s | 64.0 s | 1.01 MB | 3.30 MB | 66 particiones (5 datasets) |
+| Random forest por defecto (referencia) | 0.8328 | 1.8 s | 26.1 s | 19.11 MB | 106.33 MB | 0 |
+
+\* La receta original falla con `window shape cannot be larger than input array shape` en Marketing_Campaign,
+seismic-bumps, coil2000_insurance_policies, in_vehicle_coupon_recommendation y bank-marketing; su promedio no es
+comparable. En los 33 datasets donde todas terminan, el stacking da 0.8630 y la original 0.8591.
+
+**Comparaciones pareadas** (diferencia media de ROC-AUC por dataset, IC 95 % por bootstrap):
+
+| Comparación | Diferencia [IC 95 %] | Gana–pierde | Lectura |
+|---|---|---|---|
+| Stacking vs. receta original (33 datasets) | +0.0039 [+0.0017, +0.0066] | 27–6 | Mejor, y sin errores |
+| Stacking vs. random forest por defecto | +0.0199 [+0.0131, +0.0283] | 32–6 | Mejor |
+| Stacking (meta-modelo) vs. promedio simple | +0.0034 [+0.0003, +0.0073] | 26–12 | El meta-modelo aporta, poco |
+| MLP con VOS vs. MLP sin VOS | −0.0004 [−0.0012, +0.0003] | 17–21 | Sin efecto |
+| Stacking + MLP-VOS vs. stacking + MLP sin VOS | −0.0002 [−0.0006, −0.0000] | 16–22 | VOS no ayuda (pérdida mínima) |
+| Stacking + MLP sin VOS vs. stacking | −0.0001 [−0.0018, +0.0011] | 24–14 | Una 4.ª base no cambia el promedio |
+| Stacking + LR-SMOTE vs. stacking | −0.0007 [−0.0017, +0.0000] | 13–25 | La rama con SMOTE no ayuda |
+
+**Lo que dicen los resultados**
+- La receta de stacking es la mejor de las tres y supera a la original sin fallar en ningún dataset. La mejora es
+  pequeña en promedio (+0.004) pero consistente (27 de 33 datasets).
+- **VOS no mejora la clasificación**, ni sola ni dentro del stacking: resultado negativo, coherente con que el paper
+  es de detección fuera de distribución. Agregar la MLP como 4.ª base (con o sin VOS) duplica el tiempo y no mejora el
+  ROC-AUC medio, aunque gana el rango medio y el Elo (intervalos traslapados con R1).
+- Logística + SMOTE es la más débil (−0.02 frente al random forest); como rama del stacking no aporta.
+- Riesgos de tiempo (guía del curso: ~60 s por dataset en laptop): el stacking llega a 67 s en hiva_agnostic
+  (1,617 columnas categóricas); R3 a 91 s y R4 a 146 s. El random forest de referencia pasa de 5 MB.
+- hiva_agnostic: ninguna receta aprende (ROC-AUC ≈ 0.45–0.51), tampoco modelos simples con validación cruzada.
+  Sin verificar si es el dataset o la descarga.
+
+![ROC-AUC por dataset](results/auc_por_dataset.png)
+
+## Cómo reproducir
+
+```bash
+python bench/fetch_data.py            # datos y particiones oficiales (OpenML)
+python bench/validate_data.py         # 38/38 válidos
+bash bench/run_all.sh                 # todas las variantes, reanudable; luego genera results/
+```
 
 ## Recetas
 
@@ -145,9 +205,10 @@ R4 (demostrativa): 31.6 s / 15.6 s / 10.7 s / 3.3 s en los mismos cuatro casos; 
 
 | | Contenido |
 |---|---|
-| Medido | Que las recetas corren, respetan límites de tamaño y devuelven probabilidades válidas en casos sintéticos extremos; gradientes correctos |
-| Pendiente | Datos reales (`bench/fetch_data.py`), réplica de particiones, evaluación de todas las variantes con el protocolo de TabArena-v0.1 |
-| Hipótesis | VOS no mejora métricas dentro de la distribución (el paper es de detección OOD); SMOTE no mejora AUC y empeora log-loss si no se corrige el prior (aquí sí se corrige) |
+| Medido | Las 10 variantes en los 38 datasets × particiones oficiales (sección Resultados); pruebas sintéticas de bordes, reproducibilidad, independencia y gradientes |
+| Pendiente | Comparar contra el leaderboard oficial de TabArena con su framework (nuestro Elo es una réplica propia y solo entre estas variantes); verificar el dataset hiva_agnostic contra la fuente; medir en la máquina del curso |
+| Hipótesis confirmada | VOS no mejora la clasificación dentro de la distribución (diferencias ≤ 0.0004, sin efecto o pérdida mínima) |
+| Sin verificar | Que el reto del curso use estos mismos 38 datasets (coinciden en número, tipo y columnas) y que su dataset_37 sea hiva_agnostic |
 
 ## Otros
 

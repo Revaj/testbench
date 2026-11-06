@@ -1,0 +1,259 @@
+{
+ "dataset": "HR_Analytics_Job_Change_of_Data_Scientists",
+ "variant": "R4",
+ "task_id": 363679,
+ "splits": [
+  {
+   "repeat": 0,
+   "fold": 0,
+   "fit_s": 3.8747667530005856,
+   "pred_s": 0.1342388100019889,
+   "pickle_mb": 1.008507,
+   "auc": 0.8134236053022728,
+   "logloss": 0.4277585354701507,
+   "branch_auc": {
+    "lin": 0.8038084273054886,
+    "hgb": 0.8101156465472962,
+    "et": 0.8064950587312869,
+    "lr_smote": 0.7900133751779339
+   },
+   "info": {
+    "variant": "R1",
+    "bases": [
+     "lin",
+     "hgb",
+     "et",
+     "lr_smote"
+    ],
+    "oof_rows": 12772,
+    "folds": 3,
+    "meta": true,
+    "pickle_bytes": 1008487
+   }
+  },
+  {
+   "repeat": 0,
+   "fold": 1,
+   "fit_s": 3.5862686450018373,
+   "pred_s": 0.14491377900048974,
+   "pickle_mb": 1.201489,
+   "auc": 0.795701691079511,
+   "logloss": 0.4426265326463529,
+   "branch_auc": {
+    "lin": 0.7893095667113206,
+    "hgb": 0.7937754060247,
+    "et": 0.7870315412062399,
+    "lr_smote": 0.773029139753838
+   },
+   "info": {
+    "variant": "R1",
+    "bases": [
+     "lin",
+     "hgb",
+     "et",
+     "lr_smote"
+    ],
+    "oof_rows": 12772,
+    "folds": 3,
+    "meta": true,
+    "pickle_bytes": 1201469
+   }
+  },
+  {
+   "repeat": 0,
+   "fold": 2,
+   "fit_s": 3.491284571002325,
+   "pred_s": 0.1499467219982762,
+   "pickle_mb": 1.034437,
+   "auc": 0.797546222788543,
+   "logloss": 0.43978257868058734,
+   "branch_auc": {
+    "lin": 0.7921997042925516,
+    "hgb": 0.7946241831798806,
+    "et": 0.7909339957347823,
+    "lr_smote": 0.7721091348821761
+   },
+   "info": {
+    "variant": "R1",
+    "bases": [
+     "lin",
+     "hgb",
+     "et",
+     "lr_smote"
+    ],
+    "oof_rows": 12772,
+    "folds": 3,
+    "meta": true,
+    "pickle_bytes": 1034417
+   }
+  },
+  {
+   "repeat": 1,
+   "fold": 0,
+   "fit_s": 3.533980279997195,
+   "pred_s": 0.16117396100162296,
+   "pickle_mb": 1.039118,
+   "auc": 0.8106973383815196,
+   "logloss": 0.4301337693279373,
+   "branch_auc": {
+    "lin": 0.8025543078345418,
+    "hgb": 0.8098823539893879,
+    "et": 0.7996388387494419,
+    "lr_smote": 0.7816828458101942
+   },
+   "info": {
+    "variant": "R1",
+    "bases": [
+     "lin",
+     "hgb",
+     "et",
+     "lr_smote"
+    ],
+    "oof_rows": 12772,
+    "folds": 3,
+    "meta": true,
+    "pickle_bytes": 1039098
+   }
+  },
+  {
+   "repeat": 1,
+   "fold": 1,
+   "fit_s": 3.5850014249990636,
+   "pred_s": 0.14698104800118017,
+   "pickle_mb": 1.054559,
+   "auc": 0.7986118535942122,
+   "logloss": 0.4379395794291407,
+   "branch_auc": {
+    "lin": 0.7908520753538237,
+    "hgb": 0.7935617674312321,
+    "et": 0.7935086362140281,
+    "lr_smote": 0.7722087177648778
+   },
+   "info": {
+    "variant": "R1",
+    "bases": [
+     "lin",
+     "hgb",
+     "et",
+     "lr_smote"
+    ],
+    "oof_rows": 12772,
+    "folds": 3,
+    "meta": true,
+    "pickle_bytes": 1054539
+   }
+  },
+  {
+   "repeat": 1,
+   "fold": 2,
+   "fit_s": 3.5304300310017425,
+   "pred_s": 0.14600767500087386,
+   "pickle_mb": 1.039852,
+   "auc": 0.7986933366547705,
+   "logloss": 0.44027424676609456,
+   "branch_auc": {
+    "lin": 0.7945475648534841,
+    "hgb": 0.7953062827420558,
+    "et": 0.7901323846805782,
+    "lr_smote": 0.7812243582363849
+   },
+   "info": {
+    "variant": "R1",
+    "bases": [
+     "lin",
+     "hgb",
+     "et",
+     "lr_smote"
+    ],
+    "oof_rows": 12772,
+    "folds": 3,
+    "meta": true,
+    "pickle_bytes": 1039832
+   }
+  },
+  {
+   "repeat": 2,
+   "fold": 0,
+   "fit_s": 3.6005872819987417,
+   "pred_s": 0.1387355619990558,
+   "pickle_mb": 1.025681,
+   "auc": 0.7999029225183071,
+   "logloss": 0.438444013525033,
+   "branch_auc": {
+    "lin": 0.7910561490179308,
+    "hgb": 0.7944507162428748,
+    "et": 0.7954501203346729,
+    "lr_smote": 0.7736280615635541
+   },
+   "info": {
+    "variant": "R1",
+    "bases": [
+     "lin",
+     "hgb",
+     "et",
+     "lr_smote"
+    ],
+    "oof_rows": 12772,
+    "folds": 3,
+    "meta": true,
+    "pickle_bytes": 1025661
+   }
+  },
+  {
+   "repeat": 2,
+   "fold": 1,
+   "fit_s": 3.9028907020001498,
+   "pred_s": 0.18053148900071392,
+   "pickle_mb": 1.351547,
+   "auc": 0.8018564610704755,
+   "logloss": 0.4372013617129045,
+   "branch_auc": {
+    "lin": 0.7969475558853928,
+    "hgb": 0.7987510036624508,
+    "et": 0.7939735834994748,
+    "lr_smote": 0.785567779447928
+   },
+   "info": {
+    "variant": "R1",
+    "bases": [
+     "lin",
+     "hgb",
+     "et",
+     "lr_smote"
+    ],
+    "oof_rows": 12772,
+    "folds": 3,
+    "meta": true,
+    "pickle_bytes": 1351527
+   }
+  },
+  {
+   "repeat": 2,
+   "fold": 2,
+   "fit_s": 3.9550777939984982,
+   "pred_s": 0.1560849790002976,
+   "pickle_mb": 1.113514,
+   "auc": 0.8067682533994635,
+   "logloss": 0.4336609498797786,
+   "branch_auc": {
+    "lin": 0.7987613763480405,
+    "hgb": 0.804263750926787,
+    "et": 0.7964241244784551,
+    "lr_smote": 0.7764036903053194
+   },
+   "info": {
+    "variant": "R1",
+    "bases": [
+     "lin",
+     "hgb",
+     "et",
+     "lr_smote"
+    ],
+    "oof_rows": 12772,
+    "folds": 3,
+    "meta": true,
+    "pickle_bytes": 1113494
+   }
+  }
+ ]
+}

@@ -160,9 +160,9 @@ legacy/
 - [x] 4. Implementar R1 (3 bases + meta OOF) y R1-AVG. Elegir la base "pequeña" **solo** con el banco de desarrollo.
 - [x] 5. Implementar `mlp_vos.py` (con y sin VOS). Prueba unitaria: pérdida baja, muestreo de outliers en baja verosimilitud, `predict_proba` válido.
 - [x] 6. Pruebas de borde y peor caso (§9). Medir tiempos y pickle. Ajustar presupuestos si algo rompe límites (decisión documentada).
-- [ ] 7. Correr todas las variantes de §5 con el protocolo de §3.
-- [ ] 8. `aggregate.py` → `results/summary.md`; aplicar reglas de §8.
-- [ ] 9. README final: medido / pendiente / hipótesis; hardware; desviaciones del protocolo oficial.
+- [x] 7. Correr todas las variantes de §5 con el protocolo de §3.
+- [x] 8. `aggregate.py` → `results/summary.md`; aplicar reglas de §8.
+- [x] 9. README final: medido / pendiente / hipótesis; hardware; desviaciones del protocolo oficial.
 
 ## 12. Bitácora
 
@@ -231,6 +231,17 @@ legacy/
   hiva_agnostic (único dataset con > 256 columnas que incluyen categóricas); Bioresponse da exactamente el mismo AUC.
   hiva baja a ~64 s, todavía al límite: se reporta como riesgo. Se probó vectorizar los codificadores (idénticos en los
   38 datasets) pero era más lento en datasets largos; se descartó. Se re-corre R1 solo en hiva_agnostic.
+
+- 2026-11-07: Protocolo completo terminado: 10 variantes × 594 particiones (R1, MLP-VOS, LR-SMOTE, R3, R2, R4, R1-AVG,
+  MLP, R0, RF). 0 errores salvo R0 (66 particiones en 5 datasets). Resumen: `results/summary.md` y gráficas.
+  Reglas de §8 aplicadas:
+  - R1 vs. R0: +0.0039 [+0.0017, +0.0066] en 33 datasets comunes, 27–6, y R0 falla en 5 → **R1 reemplaza a R0**.
+    Única salvedad de límites: fit máx. 67 s en hiva_agnostic (> guía de ~60 s); pickle máx. 4.21 MB.
+  - R1 vs. R1-AVG: +0.0034 [+0.0003, +0.0073] → el meta-modelo se queda.
+  - VOS: MLP-VOS vs. MLP −0.0004 [−0.0012, +0.0003]; R3 vs. R2 −0.0002 [−0.0006, −0.0000] → **no se recomienda VOS**
+    (resultado negativo documentado).
+  - R4 (demostrativa) vs. R1: −0.0007 [−0.0017, +0.0000] → la rama con SMOTE no aporta.
+  Nota: R2 tiene el mejor Elo/rango, pero su diferencia media con R1 es −0.0001 [−0.0018, +0.0011] y tarda el doble.
 
 ## Fuentes
 

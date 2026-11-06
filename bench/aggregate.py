@@ -13,7 +13,7 @@ import numpy as np
 import pandas as pd
 
 ROOT = Path(__file__).resolve().parent.parent
-ORDER = ["R1", "R3", "R4", "R1-AVG", "R2", "MLP-VOS", "MLP", "LR-SMOTE", "B-LIN", "B-HGB", "B-SMALL", "R0", "RF"]
+ORDER = ["R1", "MLP-VOS", "LR-SMOTE", "R3", "R2", "R4", "R1-AVG", "MLP", "B-LIN", "B-HGB", "B-SMALL", "R0", "RF"]
 LABEL = {
     "R1": "Stacking (R1)", "R3": "Stacking + MLP-VOS (R3)", "R4": "Stacking + LR-SMOTE (R4)",
     "R1-AVG": "Promedio 3 bases", "R2": "Stacking + MLP (R2)", "MLP-VOS": "MLP-VOS", "MLP": "MLP sin VOS",
@@ -43,6 +43,10 @@ def per_dataset(df, meta):
     info = meta.groupby("dataset_name").agg(problem=("problem_type", "first"), n=("num_instances", "first"),
                                             p=("num_features", "first"), k=("num_classes", "first"))
     return out.join(info, on="dataset")
+
+
+def info_n(pdd, d):
+    return int(pdd[pdd.dataset == d].n.iloc[0])
 
 
 def bt_elo(score, higher_better=True, anchor="RF", n_boot=200):
@@ -117,16 +121,23 @@ def charts(rec, pdd, variants, out):
     fig, axes = plt.subplots(1, 3, figsize=(13, 0.45 * len(variants) + 1.6), sharey=True)
     for ax, (col, title, f, limit) in zip(axes, panels):
         vals = rec.loc[variants, col].to_numpy()
+        partial = (rec.loc[variants, "datasets"] < rec["datasets"].max()).to_numpy()
         y = np.arange(len(variants))[::-1]
-        ax.barh(y, vals, height=0.6, color=blue, edgecolor=surf, linewidth=2)
-        lo = 0
+        lo, hi = 0.0, None
         if col == "auc":
             lo = max(0.0, np.floor((vals.min() - 0.02) * 50) / 50)
-            ax.set_xlim(lo, min(1.0, vals.max() + 0.03))
+            hi = min(1.0, vals.max() + 0.035)
+            title = f"{title} · eje desde {lo:.2f}"
+        elif limit:
+            hi = limit * 1.3   # el RF de referencia pasa por mucho: se recorta y se anota
         else:
-            ax.set_xlim(0, max(vals.max(), limit or 0) * 1.25)
-        for yi, v in zip(y, vals):
-            ax.text(v, yi, "  " + f.format(v), va="center", ha="left", color=ink2, fontsize=9)
+            hi = vals.max() * 1.3
+        shown = np.minimum(vals, hi * 0.97)
+        ax.barh(y, shown, height=0.6, color=np.where(partial, "#a9c8f0", blue), edgecolor=surf, linewidth=2)
+        ax.set_xlim(lo, hi)
+        for v, yi, val, sv, pa in zip(variants, y, vals, shown, partial):
+            txt = "  " + f.format(val) + (" →" if sv < val else "") + (f"  ({int(rec.loc[v, 'datasets'])} de {int(rec['datasets'].max())})" if pa and col == "auc" else "")
+            ax.text(sv, yi, txt, va="center", ha="left", color=ink2, fontsize=9)
         if limit:
             ax.axvline(limit, color=muted, linewidth=1, linestyle=(0, (3, 3)))
             ax.text(limit, len(variants) - 0.4, " límite 5 MB", color=muted, fontsize=8, va="bottom")
@@ -138,8 +149,6 @@ def charts(rec, pdd, variants, out):
         ax.tick_params(axis="y", length=0)
         ax.set_yticks(np.arange(len(variants))[::-1])
         ax.set_yticklabels(labels)
-        if col == "auc" and lo > 0:
-            ax.text(lo, -0.9, f"eje desde {lo:.2f}", color=muted, fontsize=8)
     fig.tight_layout()
     fig.savefig(out / "resumen_recetas.png", dpi=160)
     plt.close(fig)
@@ -163,7 +172,7 @@ def charts(rec, pdd, variants, out):
             dark = G.iat[i, j] < -0.04
             ax.text(j, i, f"{v:.3f}", ha="center", va="center", fontsize=7, color="#ffffff" if dark else ink)
     ax.set_xticks(range(len(variants)))
-    ax.set_xticklabels(labels, rotation=30, ha="right")
+    ax.set_xticklabels(labels, rotation=30, ha="right", color=ink2)
     ax.set_yticks(range(len(M)))
     ax.set_yticklabels([f"{d} (n={int(pdd[pdd.dataset == d].n.iloc[0]):,})" for d in M.index], fontsize=8)
     ax.tick_params(length=0)
@@ -221,6 +230,8 @@ def main():
         e2 = bt_elo(ta_full, False)
         rec["elo_auc"], rec["elo_auc_lo"], rec["elo_auc_hi"] = e1.elo, e1.elo_lo, e1.elo_hi
         rec["elo_tabarena"], rec["elo_ta_lo"], rec["elo_ta_hi"] = e2.elo, e2.elo_lo, e2.elo_hi
+    common = auc.dropna().index
+    rec["auc_comunes"] = auc.loc[common].mean()
     rec.to_csv(out / "por_receta.csv")
 
     L = []
@@ -233,11 +244,13 @@ def main():
     L.append("## Promedio por receta\n")
     L.append("\"Datasets\" = datasets con resultado; si una receta falla en alguno, sus promedios son sobre los que sí "
              "terminó (ver Errores), así que no son directamente comparables con los de 38.\n")
-    L.append("| Receta | Datasets | ROC-AUC medio | AUC binarios | AUC multiclase | Log-loss multiclase | Rango medio (AUC) | "
+    L.append(f"La columna \"AUC {len(common)} comunes\" promedia solo los datasets donde todas las recetas terminaron, "
+             "para comparar en igualdad de condiciones.\n")
+    L.append(f"| Receta | Datasets | ROC-AUC medio | AUC {len(common)} comunes | AUC binarios | AUC multiclase | Log-loss multiclase | Rango medio (AUC) | "
              "Gana | Fit medio | Fit máx. | Pickle medio | Pickle máx. | Errores |")
-    L.append("|---|---|---|---|---|---|---|---|---|---|---|---|---|")
+    L.append("|---|---|---|---|---|---|---|---|---|---|---|---|---|---|")
     for v, r in rec.iterrows():
-        L.append(f"| {LABEL.get(v, v)} | {int(r.datasets)} | **{r.auc:.4f}** | {r.auc_bin:.4f} | {r.auc_multi:.4f} | "
+        L.append(f"| {LABEL.get(v, v)} | {int(r.datasets)} | **{r.auc:.4f}** | {r.auc_comunes:.4f} | {r.auc_bin:.4f} | {r.auc_multi:.4f} | "
                  f"{r.logloss_multi:.4f} | {r.rank_auc:.2f} | {int(r.wins_auc)} | {r.fit_s:.1f} s | {r.fit_max:.1f} s | "
                  f"{r.pickle_mb:.2f} MB | {r.pickle_max:.2f} MB | {int(r.errors)} |")
     if "elo_auc" in rec:
@@ -250,7 +263,7 @@ def main():
         for v, r in rec.sort_values("elo_auc", ascending=False).iterrows():
             L.append(f"| {LABEL.get(v, v)} | {r.elo_auc:.0f} [{r.elo_auc_lo:.0f}, {r.elo_auc_hi:.0f}] | "
                      f"{r.elo_tabarena:.0f} [{r.elo_ta_lo:.0f}, {r.elo_ta_hi:.0f}] |")
-    comps = [("R1", "R0"), ("R1", "RF"), ("R1", "R1-AVG"), ("R3", "R1"), ("R3", "R2"), ("MLP-VOS", "MLP"),
+    comps = [("R1", "R0"), ("R1", "RF"), ("R1", "R1-AVG"), ("R2", "R1"), ("R3", "R1"), ("R3", "R2"), ("MLP-VOS", "MLP"),
              ("R4", "R1"), ("LR-SMOTE", "B-LIN"), ("MLP-VOS", "RF"), ("LR-SMOTE", "RF")]
     rows = [r for r in (paired(auc, x, y) for x, y in comps) if r]
     if rows:
@@ -259,6 +272,23 @@ def main():
         L.append("|---|---|---|---|---|")
         for r in rows:
             L.append(f"| {LABEL.get(r['a'], r['a'])} vs. {LABEL.get(r['b'], r['b'])} | {r['n']} | {fmt_ci(r)} |")
+    pc = df[df.auc_per_class.notna()]
+    if len(pc):
+        L.append("\n## Multiclase: ROC-AUC por clase (uno contra todos, promedio sobre particiones)\n")
+        L.append("Clases en el orden de `classes_` (orden de las etiquetas).\n")
+        main = [v for v in ["R1", "R3", "MLP-VOS", "LR-SMOTE", "R0", "RF"] if v in variants]
+        L.append("| Dataset | " + " | ".join(LABEL.get(v, v) for v in main) + " |")
+        L.append("|---|" + "---|" * len(main))
+        for d in sorted(pc.dataset.unique(), key=lambda x: info_n(pdd, x)):
+            cells = []
+            for v in main:
+                g = pc[(pc.variant == v) & (pc.dataset == d)].auc_per_class
+                if g.empty:
+                    cells.append("error")
+                    continue
+                M = np.array([[np.nan if a is None else a for a in row] for row in g], dtype=float)
+                cells.append(" / ".join("—" if np.isnan(a) else f"{a:.3f}" for a in np.nanmean(M, axis=0)))
+            L.append(f"| {d} | " + " | ".join(cells) + " |")
     L.append("\n## Por dataset: ROC-AUC · fit medio (s) · pickle medio (MB)\n")
     L.append("| Dataset | Tipo | Filas | Feat. | " + " | ".join(LABEL.get(v, v) for v in variants) + " |")
     L.append("|---|---|---|---|" + "---|" * len(variants))
