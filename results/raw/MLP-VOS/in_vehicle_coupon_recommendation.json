@@ -1,0 +1,133 @@
+{
+ "dataset": "in_vehicle_coupon_recommendation",
+ "variant": "MLP-VOS",
+ "task_id": 363681,
+ "splits": [
+  {
+   "repeat": 0,
+   "fold": 0,
+   "fit_s": 1.985129100999984,
+   "pred_s": 0.048428005000005214,
+   "pickle_mb": 0.097347,
+   "auc": 0.7183798657938524,
+   "logloss": 0.6165967583656311,
+   "info": {
+    "use_vos": true,
+    "epochs": 17,
+    "vos_steps": 374
+   }
+  },
+  {
+   "repeat": 0,
+   "fold": 1,
+   "fit_s": 1.7105945579996842,
+   "pred_s": 0.046478114999899844,
+   "pickle_mb": 0.097347,
+   "auc": 0.6954640033291719,
+   "logloss": 0.6303805112838745,
+   "info": {
+    "use_vos": true,
+    "epochs": 13,
+    "vos_steps": 272
+   }
+  },
+  {
+   "repeat": 0,
+   "fold": 2,
+   "fit_s": 1.302681315999962,
+   "pred_s": 0.04577371300001687,
+   "pickle_mb": 0.097345,
+   "auc": 0.6987874745609084,
+   "logloss": 0.6250125765800476,
+   "info": {
+    "use_vos": true,
+    "epochs": 9,
+    "vos_steps": 204
+   }
+  },
+  {
+   "repeat": 1,
+   "fold": 0,
+   "fit_s": 1.346016043000418,
+   "pred_s": 0.05815957499999058,
+   "pickle_mb": 0.097345,
+   "auc": 0.7140017687990776,
+   "logloss": 0.6130385994911194,
+   "info": {
+    "use_vos": true,
+    "epochs": 9,
+    "vos_steps": 204
+   }
+  },
+  {
+   "repeat": 1,
+   "fold": 1,
+   "fit_s": 1.5771511389998523,
+   "pred_s": 0.0657453290000376,
+   "pickle_mb": 0.097345,
+   "auc": 0.6984936637422399,
+   "logloss": 0.627187192440033,
+   "info": {
+    "use_vos": true,
+    "epochs": 8,
+    "vos_steps": 170
+   }
+  },
+  {
+   "repeat": 1,
+   "fold": 2,
+   "fit_s": 1.3702625659998375,
+   "pred_s": 0.06225934899975982,
+   "pickle_mb": 0.097345,
+   "auc": 0.7011809439114349,
+   "logloss": 0.6251015663146973,
+   "info": {
+    "use_vos": true,
+    "epochs": 6,
+    "vos_steps": 136
+   }
+  },
+  {
+   "repeat": 2,
+   "fold": 0,
+   "fit_s": 1.6102363729996796,
+   "pred_s": 0.0754521769999883,
+   "pickle_mb": 0.097345,
+   "auc": 0.7000055417505912,
+   "logloss": 0.6215537190437317,
+   "info": {
+    "use_vos": true,
+    "epochs": 7,
+    "vos_steps": 170
+   }
+  },
+  {
+   "repeat": 2,
+   "fold": 1,
+   "fit_s": 1.84544194099999,
+   "pred_s": 0.053711782000391395,
+   "pickle_mb": 0.097345,
+   "auc": 0.6940857033730667,
+   "logloss": 0.6259459853172302,
+   "info": {
+    "use_vos": true,
+    "epochs": 9,
+    "vos_steps": 204
+   }
+  },
+  {
+   "repeat": 2,
+   "fold": 2,
+   "fit_s": 1.7988323909999053,
+   "pred_s": 0.04430920499999047,
+   "pickle_mb": 0.097345,
+   "auc": 0.7072506398964765,
+   "logloss": 0.6181782484054565,
+   "info": {
+    "use_vos": true,
+    "epochs": 11,
+    "vos_steps": 238
+   }
+  }
+ ]
+}

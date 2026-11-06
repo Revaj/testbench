@@ -1,0 +1,133 @@
+{
+ "dataset": "polish_companies_bankruptcy",
+ "variant": "MLP-VOS",
+ "task_id": 363694,
+ "splits": [
+  {
+   "repeat": 0,
+   "fold": 0,
+   "fit_s": 2.235248032999607,
+   "pred_s": 0.04967596999995294,
+   "pickle_mb": 0.231192,
+   "auc": 0.9361809609339921,
+   "logloss": 0.1323104202747345,
+   "info": {
+    "use_vos": true,
+    "epochs": 41,
+    "vos_steps": 400
+   }
+  },
+  {
+   "repeat": 0,
+   "fold": 1,
+   "fit_s": 1.7319587739998497,
+   "pred_s": 0.04507785000032527,
+   "pickle_mb": 0.230672,
+   "auc": 0.9148657420128146,
+   "logloss": 0.14765354990959167,
+   "info": {
+    "use_vos": true,
+    "epochs": 30,
+    "vos_steps": 288
+   }
+  },
+  {
+   "repeat": 0,
+   "fold": 2,
+   "fit_s": 1.5132817499998055,
+   "pred_s": 0.05977976599979229,
+   "pickle_mb": 0.231192,
+   "auc": 0.9253188701860855,
+   "logloss": 0.14062227308750153,
+   "info": {
+    "use_vos": true,
+    "epochs": 27,
+    "vos_steps": 272
+   }
+  },
+  {
+   "repeat": 1,
+   "fold": 0,
+   "fit_s": 1.6968820870001764,
+   "pred_s": 0.04253222999977879,
+   "pickle_mb": 0.231192,
+   "auc": 0.9282466803515299,
+   "logloss": 0.14507956802845,
+   "info": {
+    "use_vos": true,
+    "epochs": 31,
+    "vos_steps": 304
+   }
+  },
+  {
+   "repeat": 1,
+   "fold": 1,
+   "fit_s": 1.879758923999816,
+   "pred_s": 0.042048067999985506,
+   "pickle_mb": 0.230672,
+   "auc": 0.91463079551292,
+   "logloss": 0.1575867384672165,
+   "info": {
+    "use_vos": true,
+    "epochs": 37,
+    "vos_steps": 368
+   }
+  },
+  {
+   "repeat": 1,
+   "fold": 2,
+   "fit_s": 2.184366948999923,
+   "pred_s": 0.0454632130004029,
+   "pickle_mb": 0.231192,
+   "auc": 0.9219380298740447,
+   "logloss": 0.17029622197151184,
+   "info": {
+    "use_vos": true,
+    "epochs": 44,
+    "vos_steps": 432
+   }
+  },
+  {
+   "repeat": 2,
+   "fold": 0,
+   "fit_s": 3.5651573400000416,
+   "pred_s": 0.04650371300022016,
+   "pickle_mb": 0.230672,
+   "auc": 0.9412085444864969,
+   "logloss": 0.17677904665470123,
+   "info": {
+    "use_vos": true,
+    "epochs": 75,
+    "vos_steps": 720
+   }
+  },
+  {
+   "repeat": 2,
+   "fold": 1,
+   "fit_s": 1.546292554000047,
+   "pred_s": 0.0424295620000521,
+   "pickle_mb": 0.231192,
+   "auc": 0.9080323827955448,
+   "logloss": 0.15311864018440247,
+   "info": {
+    "use_vos": true,
+    "epochs": 28,
+    "vos_steps": 272
+   }
+  },
+  {
+   "repeat": 2,
+   "fold": 2,
+   "fit_s": 1.3422328219999144,
+   "pred_s": 0.042922988000100304,
+   "pickle_mb": 0.23119,
+   "auc": 0.9246578342711282,
+   "logloss": 0.1441371589899063,
+   "info": {
+    "use_vos": true,
+    "epochs": 22,
+    "vos_steps": 224
+   }
+  }
+ ]
+}

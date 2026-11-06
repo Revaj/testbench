@@ -1,0 +1,133 @@
+{
+ "dataset": "APSFailure",
+ "variant": "MLP-VOS",
+ "task_id": 363616,
+ "splits": [
+  {
+   "repeat": 0,
+   "fold": 0,
+   "fit_s": 9.134893821999867,
+   "pred_s": 0.8409289589999389,
+   "pickle_mb": 0.466507,
+   "auc": 0.9915546359247216,
+   "logloss": 0.028814127668738365,
+   "info": {
+    "use_vos": true,
+    "epochs": 5,
+    "vos_steps": 588
+   }
+  },
+  {
+   "repeat": 0,
+   "fold": 1,
+   "fit_s": 9.15355741500025,
+   "pred_s": 0.7629937520005114,
+   "pickle_mb": 0.466507,
+   "auc": 0.9884078909833007,
+   "logloss": 0.02771763689815998,
+   "info": {
+    "use_vos": true,
+    "epochs": 5,
+    "vos_steps": 588
+   }
+  },
+  {
+   "repeat": 0,
+   "fold": 2,
+   "fit_s": 8.698036346000663,
+   "pred_s": 0.7626700780001556,
+   "pickle_mb": 0.466507,
+   "auc": 0.9872796734765532,
+   "logloss": 0.024737821891903877,
+   "info": {
+    "use_vos": true,
+    "epochs": 5,
+    "vos_steps": 588
+   }
+  },
+  {
+   "repeat": 1,
+   "fold": 0,
+   "fit_s": 15.440581810000367,
+   "pred_s": 0.7543622950006466,
+   "pickle_mb": 0.466507,
+   "auc": 0.986691102571682,
+   "logloss": 0.02587743103504181,
+   "info": {
+    "use_vos": true,
+    "epochs": 10,
+    "vos_steps": 1176
+   }
+  },
+  {
+   "repeat": 1,
+   "fold": 1,
+   "fit_s": 12.588046509000378,
+   "pred_s": 0.829912393000086,
+   "pickle_mb": 0.466507,
+   "auc": 0.9908996510938974,
+   "logloss": 0.02490430697798729,
+   "info": {
+    "use_vos": true,
+    "epochs": 8,
+    "vos_steps": 980
+   }
+  },
+  {
+   "repeat": 1,
+   "fold": 2,
+   "fit_s": 10.578945885999929,
+   "pred_s": 0.8112106409998887,
+   "pickle_mb": 0.466507,
+   "auc": 0.9888501898136974,
+   "logloss": 0.024217450991272926,
+   "info": {
+    "use_vos": true,
+    "epochs": 6,
+    "vos_steps": 784
+   }
+  },
+  {
+   "repeat": 2,
+   "fold": 0,
+   "fit_s": 8.321031792999747,
+   "pred_s": 0.8129709559998446,
+   "pickle_mb": 0.466507,
+   "auc": 0.9880095028519502,
+   "logloss": 0.029438138008117676,
+   "info": {
+    "use_vos": true,
+    "epochs": 5,
+    "vos_steps": 588
+   }
+  },
+  {
+   "repeat": 2,
+   "fold": 1,
+   "fit_s": 8.43352966800012,
+   "pred_s": 0.787490670999432,
+   "pickle_mb": 0.466507,
+   "auc": 0.9904399727897129,
+   "logloss": 0.025268439203500748,
+   "info": {
+    "use_vos": true,
+    "epochs": 5,
+    "vos_steps": 588
+   }
+  },
+  {
+   "repeat": 2,
+   "fold": 2,
+   "fit_s": 8.707091114000832,
+   "pred_s": 0.7890887959993051,
+   "pickle_mb": 0.466507,
+   "auc": 0.987061157314959,
+   "logloss": 0.024845898151397705,
+   "info": {
+    "use_vos": true,
+    "epochs": 5,
+    "vos_steps": 588
+   }
+  }
+ ]
+}

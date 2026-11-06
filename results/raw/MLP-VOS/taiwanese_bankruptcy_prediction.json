@@ -1,0 +1,133 @@
+{
+ "dataset": "taiwanese_bankruptcy_prediction",
+ "variant": "MLP-VOS",
+ "task_id": 363706,
+ "splits": [
+  {
+   "repeat": 0,
+   "fold": 0,
+   "fit_s": 0.7149296959996718,
+   "pred_s": 0.06412949800005663,
+   "pickle_mb": 0.283588,
+   "auc": 0.9266998754669987,
+   "logloss": 0.08996203541755676,
+   "info": {
+    "use_vos": true,
+    "epochs": 5,
+    "vos_steps": 54
+   }
+  },
+  {
+   "repeat": 0,
+   "fold": 1,
+   "fit_s": 0.7200155150003411,
+   "pred_s": 0.0742165940000632,
+   "pickle_mb": 0.283588,
+   "auc": 0.9164321295143213,
+   "logloss": 0.09745842218399048,
+   "info": {
+    "use_vos": true,
+    "epochs": 6,
+    "vos_steps": 72
+   }
+  },
+  {
+   "repeat": 0,
+   "fold": 2,
+   "fit_s": 0.6927106210000602,
+   "pred_s": 0.07128962900014812,
+   "pickle_mb": 0.283588,
+   "auc": 0.9168971153964334,
+   "logloss": 0.1008806899189949,
+   "info": {
+    "use_vos": true,
+    "epochs": 5,
+    "vos_steps": 54
+   }
+  },
+  {
+   "repeat": 1,
+   "fold": 0,
+   "fit_s": 0.7749248820000503,
+   "pred_s": 0.06650913499970557,
+   "pickle_mb": 0.283588,
+   "auc": 0.9347322540473225,
+   "logloss": 0.08705141395330429,
+   "info": {
+    "use_vos": true,
+    "epochs": 6,
+    "vos_steps": 72
+   }
+  },
+  {
+   "repeat": 1,
+   "fold": 1,
+   "fit_s": 1.0028743490001943,
+   "pred_s": 0.07220597800005635,
+   "pickle_mb": 0.283588,
+   "auc": 0.9310460772104607,
+   "logloss": 0.09386545419692993,
+   "info": {
+    "use_vos": true,
+    "epochs": 12,
+    "vos_steps": 144
+   }
+  },
+  {
+   "repeat": 1,
+   "fold": 2,
+   "fit_s": 0.6695485350001036,
+   "pred_s": 0.06847794299983434,
+   "pickle_mb": 0.283588,
+   "auc": 0.9239211926797193,
+   "logloss": 0.09396013617515564,
+   "info": {
+    "use_vos": true,
+    "epochs": 5,
+    "vos_steps": 54
+   }
+  },
+  {
+   "repeat": 2,
+   "fold": 0,
+   "fit_s": 1.0822641899999326,
+   "pred_s": 0.06481732000020202,
+   "pickle_mb": 0.283588,
+   "auc": 0.9075031133250312,
+   "logloss": 0.10677582770586014,
+   "info": {
+    "use_vos": true,
+    "epochs": 14,
+    "vos_steps": 162
+   }
+  },
+  {
+   "repeat": 2,
+   "fold": 1,
+   "fit_s": 1.1529565939999884,
+   "pred_s": 0.06659207499978947,
+   "pickle_mb": 0.283588,
+   "auc": 0.9275778331257784,
+   "logloss": 0.09735598415136337,
+   "info": {
+    "use_vos": true,
+    "epochs": 14,
+    "vos_steps": 162
+   }
+  },
+  {
+   "repeat": 2,
+   "fold": 2,
+   "fit_s": 0.7054264079997665,
+   "pred_s": 0.06735470400008126,
+   "pickle_mb": 0.283588,
+   "auc": 0.9279647997246906,
+   "logloss": 0.09249542653560638,
+   "info": {
+    "use_vos": true,
+    "epochs": 5,
+    "vos_steps": 54
+   }
+  }
+ ]
+}

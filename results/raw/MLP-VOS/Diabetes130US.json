@@ -1,0 +1,133 @@
+{
+ "dataset": "Diabetes130US",
+ "variant": "MLP-VOS",
+ "task_id": 363630,
+ "splits": [
+  {
+   "repeat": 0,
+   "fold": 0,
+   "fit_s": 7.750031120999665,
+   "pred_s": 0.4927823809994152,
+   "pickle_mb": 0.204948,
+   "auc": 0.6531382657298579,
+   "logloss": 0.28474870324134827,
+   "info": {
+    "use_vos": true,
+    "epochs": 7,
+    "vos_steps": 935
+   }
+  },
+  {
+   "repeat": 0,
+   "fold": 1,
+   "fit_s": 6.126927297000293,
+   "pred_s": 0.4083265230001416,
+   "pickle_mb": 0.203801,
+   "auc": 0.649967065100864,
+   "logloss": 0.2868939936161041,
+   "info": {
+    "use_vos": true,
+    "epochs": 6,
+    "vos_steps": 748
+   }
+  },
+  {
+   "repeat": 0,
+   "fold": 2,
+   "fit_s": 6.442086021999785,
+   "pred_s": 0.3749931459997242,
+   "pickle_mb": 0.204168,
+   "auc": 0.6480937687023358,
+   "logloss": 0.2863212525844574,
+   "info": {
+    "use_vos": true,
+    "epochs": 6,
+    "vos_steps": 748
+   }
+  },
+  {
+   "repeat": 1,
+   "fold": 0,
+   "fit_s": 5.029184977000114,
+   "pred_s": 0.3718748239998604,
+   "pickle_mb": 0.204638,
+   "auc": 0.6618932254231288,
+   "logloss": 0.28296518325805664,
+   "info": {
+    "use_vos": true,
+    "epochs": 5,
+    "vos_steps": 561
+   }
+  },
+  {
+   "repeat": 1,
+   "fold": 1,
+   "fit_s": 4.809664482999324,
+   "pred_s": 0.38800131199968746,
+   "pickle_mb": 0.203652,
+   "auc": 0.6421689556816363,
+   "logloss": 0.28627488017082214,
+   "info": {
+    "use_vos": true,
+    "epochs": 5,
+    "vos_steps": 561
+   }
+  },
+  {
+   "repeat": 1,
+   "fold": 2,
+   "fit_s": 6.631407128999854,
+   "pred_s": 0.42018685299990466,
+   "pickle_mb": 0.204201,
+   "auc": 0.6499325252499211,
+   "logloss": 0.2873285412788391,
+   "info": {
+    "use_vos": true,
+    "epochs": 6,
+    "vos_steps": 748
+   }
+  },
+  {
+   "repeat": 2,
+   "fold": 0,
+   "fit_s": 5.079162800999256,
+   "pred_s": 0.39881181199962157,
+   "pickle_mb": 0.205248,
+   "auc": 0.6612519630726189,
+   "logloss": 0.2832867205142975,
+   "info": {
+    "use_vos": true,
+    "epochs": 5,
+    "vos_steps": 561
+   }
+  },
+  {
+   "repeat": 2,
+   "fold": 1,
+   "fit_s": 6.255946893999862,
+   "pred_s": 0.41058674299983977,
+   "pickle_mb": 0.203817,
+   "auc": 0.6515398951601622,
+   "logloss": 0.28492724895477295,
+   "info": {
+    "use_vos": true,
+    "epochs": 6,
+    "vos_steps": 748
+   }
+  },
+  {
+   "repeat": 2,
+   "fold": 2,
+   "fit_s": 5.680818599999839,
+   "pred_s": 0.3759506149999652,
+   "pickle_mb": 0.201919,
+   "auc": 0.6526598188246945,
+   "logloss": 0.286383718252182,
+   "info": {
+    "use_vos": true,
+    "epochs": 5,
+    "vos_steps": 561
+   }
+  }
+ ]
+}

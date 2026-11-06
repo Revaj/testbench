@@ -1,0 +1,133 @@
+{
+ "dataset": "GiveMeSomeCredit",
+ "variant": "MLP-VOS",
+ "task_id": 363673,
+ "splits": [
+  {
+   "repeat": 0,
+   "fold": 0,
+   "fit_s": 6.42852159999984,
+   "pred_s": 0.1183072390003872,
+   "pickle_mb": 0.065618,
+   "auc": 0.861762587147821,
+   "logloss": 0.17974551022052765,
+   "info": {
+    "use_vos": true,
+    "epochs": 13,
+    "vos_steps": 1568
+   }
+  },
+  {
+   "repeat": 0,
+   "fold": 1,
+   "fit_s": 2.7028332889995,
+   "pred_s": 0.1070220090005023,
+   "pickle_mb": 0.065618,
+   "auc": 0.8561992014213258,
+   "logloss": 0.1830008625984192,
+   "info": {
+    "use_vos": true,
+    "epochs": 5,
+    "vos_steps": 588
+   }
+  },
+  {
+   "repeat": 0,
+   "fold": 2,
+   "fit_s": 3.468995920999987,
+   "pred_s": 0.12529974800054333,
+   "pickle_mb": 0.065618,
+   "auc": 0.8583282612192739,
+   "logloss": 0.1821051687002182,
+   "info": {
+    "use_vos": true,
+    "epochs": 6,
+    "vos_steps": 784
+   }
+  },
+  {
+   "repeat": 1,
+   "fold": 0,
+   "fit_s": 4.360708330999842,
+   "pred_s": 0.11414324799989117,
+   "pickle_mb": 0.065618,
+   "auc": 0.8571324761800467,
+   "logloss": 0.1818406879901886,
+   "info": {
+    "use_vos": true,
+    "epochs": 8,
+    "vos_steps": 980
+   }
+  },
+  {
+   "repeat": 1,
+   "fold": 1,
+   "fit_s": 3.348682769000334,
+   "pred_s": 0.11459815800026263,
+   "pickle_mb": 0.065618,
+   "auc": 0.8617763849141616,
+   "logloss": 0.18097245693206787,
+   "info": {
+    "use_vos": true,
+    "epochs": 6,
+    "vos_steps": 784
+   }
+  },
+  {
+   "repeat": 1,
+   "fold": 2,
+   "fit_s": 2.799473263999971,
+   "pred_s": 0.11807950900038122,
+   "pickle_mb": 0.065618,
+   "auc": 0.8537518951647316,
+   "logloss": 0.1836523860692978,
+   "info": {
+    "use_vos": true,
+    "epochs": 5,
+    "vos_steps": 588
+   }
+  },
+  {
+   "repeat": 2,
+   "fold": 0,
+   "fit_s": 2.970597239000199,
+   "pred_s": 0.12286906600002112,
+   "pickle_mb": 0.065618,
+   "auc": 0.8589981952021406,
+   "logloss": 0.183400958776474,
+   "info": {
+    "use_vos": true,
+    "epochs": 5,
+    "vos_steps": 588
+   }
+  },
+  {
+   "repeat": 2,
+   "fold": 1,
+   "fit_s": 2.701808544999949,
+   "pred_s": 0.11442178700053773,
+   "pickle_mb": 0.065618,
+   "auc": 0.8544093781304705,
+   "logloss": 0.18324683606624603,
+   "info": {
+    "use_vos": true,
+    "epochs": 5,
+    "vos_steps": 588
+   }
+  },
+  {
+   "repeat": 2,
+   "fold": 2,
+   "fit_s": 6.825305207999918,
+   "pred_s": 0.11321754099935788,
+   "pickle_mb": 0.065618,
+   "auc": 0.8597647840933988,
+   "logloss": 0.18164528906345367,
+   "info": {
+    "use_vos": true,
+    "epochs": 14,
+    "vos_steps": 1764
+   }
+  }
+ ]
+}
