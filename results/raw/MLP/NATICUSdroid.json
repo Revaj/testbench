@@ -1,0 +1,133 @@
+{
+ "dataset": "NATICUSdroid",
+ "variant": "MLP",
+ "task_id": 363689,
+ "splits": [
+  {
+   "repeat": 0,
+   "fold": 0,
+   "fit_s": 2.6675549400024465,
+   "pred_s": 0.08886121000250569,
+   "pickle_mb": 0.136129,
+   "auc": 0.9849940289121905,
+   "logloss": 0.16977205872535706,
+   "info": {
+    "use_vos": false,
+    "epochs": 44,
+    "vos_steps": 0
+   }
+  },
+  {
+   "repeat": 0,
+   "fold": 1,
+   "fit_s": 2.6704854569979943,
+   "pred_s": 0.08821853799963719,
+   "pickle_mb": 0.136129,
+   "auc": 0.9852020433327461,
+   "logloss": 0.15629877150058746,
+   "info": {
+    "use_vos": false,
+    "epochs": 45,
+    "vos_steps": 0
+   }
+  },
+  {
+   "repeat": 0,
+   "fold": 2,
+   "fit_s": 2.1163115589988593,
+   "pred_s": 0.09241794799891068,
+   "pickle_mb": 0.136129,
+   "auc": 0.9820465034349128,
+   "logloss": 0.16968640685081482,
+   "info": {
+    "use_vos": false,
+    "epochs": 29,
+    "vos_steps": 0
+   }
+  },
+  {
+   "repeat": 1,
+   "fold": 0,
+   "fit_s": 1.985477494999941,
+   "pred_s": 0.08671123000021908,
+   "pickle_mb": 0.136129,
+   "auc": 0.9860112735599788,
+   "logloss": 0.14734110236167908,
+   "info": {
+    "use_vos": false,
+    "epochs": 33,
+    "vos_steps": 0
+   }
+  },
+  {
+   "repeat": 1,
+   "fold": 1,
+   "fit_s": 2.051201096997829,
+   "pred_s": 0.08570044600128313,
+   "pickle_mb": 0.136129,
+   "auc": 0.9861462039809759,
+   "logloss": 0.1439172625541687,
+   "info": {
+    "use_vos": false,
+    "epochs": 31,
+    "vos_steps": 0
+   }
+  },
+  {
+   "repeat": 1,
+   "fold": 2,
+   "fit_s": 1.7795655310001166,
+   "pred_s": 0.0802723069973581,
+   "pickle_mb": 0.136129,
+   "auc": 0.980912258142745,
+   "logloss": 0.1704823076725006,
+   "info": {
+    "use_vos": false,
+    "epochs": 25,
+    "vos_steps": 0
+   }
+  },
+  {
+   "repeat": 2,
+   "fold": 0,
+   "fit_s": 2.2548987160007528,
+   "pred_s": 0.09079735000341316,
+   "pickle_mb": 0.136129,
+   "auc": 0.983471648259925,
+   "logloss": 0.16743242740631104,
+   "info": {
+    "use_vos": false,
+    "epochs": 35,
+    "vos_steps": 0
+   }
+  },
+  {
+   "repeat": 2,
+   "fold": 1,
+   "fit_s": 2.28329954000219,
+   "pred_s": 0.09686991899798159,
+   "pickle_mb": 0.136129,
+   "auc": 0.9846816980799719,
+   "logloss": 0.1577712446451187,
+   "info": {
+    "use_vos": false,
+    "epochs": 34,
+    "vos_steps": 0
+   }
+  },
+  {
+   "repeat": 2,
+   "fold": 2,
+   "fit_s": 1.6021873379977478,
+   "pred_s": 0.09377708199826884,
+   "pickle_mb": 0.136129,
+   "auc": 0.9844572837766425,
+   "logloss": 0.16181911528110504,
+   "info": {
+    "use_vos": false,
+    "epochs": 18,
+    "vos_steps": 0
+   }
+  }
+ ]
+}

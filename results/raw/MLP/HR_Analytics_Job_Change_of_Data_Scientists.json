@@ -1,0 +1,133 @@
+{
+ "dataset": "HR_Analytics_Job_Change_of_Data_Scientists",
+ "variant": "MLP",
+ "task_id": 363679,
+ "splits": [
+  {
+   "repeat": 0,
+   "fold": 0,
+   "fit_s": 0.9960921339989,
+   "pred_s": 0.035677773998031626,
+   "pickle_mb": 0.079808,
+   "auc": 0.8098338742104347,
+   "logloss": 0.43489667773246765,
+   "info": {
+    "use_vos": false,
+    "epochs": 8,
+    "vos_steps": 0
+   }
+  },
+  {
+   "repeat": 0,
+   "fold": 1,
+   "fit_s": 1.2285545859995182,
+   "pred_s": 0.037242462996800896,
+   "pickle_mb": 0.079844,
+   "auc": 0.7932948665941304,
+   "logloss": 0.44999146461486816,
+   "info": {
+    "use_vos": false,
+    "epochs": 10,
+    "vos_steps": 0
+   }
+  },
+  {
+   "repeat": 0,
+   "fold": 2,
+   "fit_s": 1.1804302780001308,
+   "pred_s": 0.03759174800143228,
+   "pickle_mb": 0.079845,
+   "auc": 0.797803450810838,
+   "logloss": 0.446128785610199,
+   "info": {
+    "use_vos": false,
+    "epochs": 8,
+    "vos_steps": 0
+   }
+  },
+  {
+   "repeat": 1,
+   "fold": 0,
+   "fit_s": 0.9835886850014504,
+   "pred_s": 0.0386029100009182,
+   "pickle_mb": 0.079773,
+   "auc": 0.8056788951012888,
+   "logloss": 0.43675747513771057,
+   "info": {
+    "use_vos": false,
+    "epochs": 6,
+    "vos_steps": 0
+   }
+  },
+  {
+   "repeat": 1,
+   "fold": 1,
+   "fit_s": 0.9129233489984472,
+   "pred_s": 0.03743993399984902,
+   "pickle_mb": 0.079845,
+   "auc": 0.7955667993702347,
+   "logloss": 0.44570308923721313,
+   "info": {
+    "use_vos": false,
+    "epochs": 6,
+    "vos_steps": 0
+   }
+  },
+  {
+   "repeat": 1,
+   "fold": 2,
+   "fit_s": 1.4933848139990005,
+   "pred_s": 0.04023872799734818,
+   "pickle_mb": 0.07988,
+   "auc": 0.795463055625298,
+   "logloss": 0.4503975510597229,
+   "info": {
+    "use_vos": false,
+    "epochs": 15,
+    "vos_steps": 0
+   }
+  },
+  {
+   "repeat": 2,
+   "fold": 0,
+   "fit_s": 0.9981466339995677,
+   "pred_s": 0.03817772100228467,
+   "pickle_mb": 0.079809,
+   "auc": 0.7954291561059363,
+   "logloss": 0.44691821932792664,
+   "info": {
+    "use_vos": false,
+    "epochs": 7,
+    "vos_steps": 0
+   }
+  },
+  {
+   "repeat": 2,
+   "fold": 1,
+   "fit_s": 1.0501756129997375,
+   "pred_s": 0.03973888299879036,
+   "pickle_mb": 0.079844,
+   "auc": 0.8035718590868401,
+   "logloss": 0.4396815896034241,
+   "info": {
+    "use_vos": false,
+    "epochs": 8,
+    "vos_steps": 0
+   }
+  },
+  {
+   "repeat": 2,
+   "fold": 2,
+   "fit_s": 0.906794460999663,
+   "pred_s": 0.03911618599886424,
+   "pickle_mb": 0.079845,
+   "auc": 0.8042220365046379,
+   "logloss": 0.4395989775657654,
+   "info": {
+    "use_vos": false,
+    "epochs": 6,
+    "vos_steps": 0
+   }
+  }
+ ]
+}

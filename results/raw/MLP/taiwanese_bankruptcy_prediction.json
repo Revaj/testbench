@@ -1,0 +1,133 @@
+{
+ "dataset": "taiwanese_bankruptcy_prediction",
+ "variant": "MLP",
+ "task_id": 363706,
+ "splits": [
+  {
+   "repeat": 0,
+   "fold": 0,
+   "fit_s": 0.6511103459997685,
+   "pred_s": 0.07919271199716604,
+   "pickle_mb": 0.283588,
+   "auc": 0.9232378580323786,
+   "logloss": 0.09116343408823013,
+   "info": {
+    "use_vos": false,
+    "epochs": 5,
+    "vos_steps": 0
+   }
+  },
+  {
+   "repeat": 0,
+   "fold": 1,
+   "fit_s": 0.6578561730020738,
+   "pred_s": 0.0847174009977607,
+   "pickle_mb": 0.283588,
+   "auc": 0.9182689912826899,
+   "logloss": 0.09378218650817871,
+   "info": {
+    "use_vos": false,
+    "epochs": 6,
+    "vos_steps": 0
+   }
+  },
+  {
+   "repeat": 0,
+   "fold": 2,
+   "fit_s": 0.5410962669993751,
+   "pred_s": 0.05930379400160746,
+   "pickle_mb": 0.283588,
+   "auc": 0.9163317478460725,
+   "logloss": 0.09743563830852509,
+   "info": {
+    "use_vos": false,
+    "epochs": 5,
+    "vos_steps": 0
+   }
+  },
+  {
+   "repeat": 1,
+   "fold": 0,
+   "fit_s": 0.7017556350001541,
+   "pred_s": 0.06461102400135132,
+   "pickle_mb": 0.283588,
+   "auc": 0.9341531755915318,
+   "logloss": 0.08770911395549774,
+   "info": {
+    "use_vos": false,
+    "epochs": 6,
+    "vos_steps": 0
+   }
+  },
+  {
+   "repeat": 1,
+   "fold": 1,
+   "fit_s": 0.9084513380003045,
+   "pred_s": 0.06369621900012135,
+   "pickle_mb": 0.283588,
+   "auc": 0.9278953922789539,
+   "logloss": 0.09291081130504608,
+   "info": {
+    "use_vos": false,
+    "epochs": 12,
+    "vos_steps": 0
+   }
+  },
+  {
+   "repeat": 1,
+   "fold": 2,
+   "fit_s": 0.5782646179977746,
+   "pred_s": 0.06286836300205323,
+   "pickle_mb": 0.283588,
+   "auc": 0.9239949362732446,
+   "logloss": 0.09201011806726456,
+   "info": {
+    "use_vos": false,
+    "epochs": 5,
+    "vos_steps": 0
+   }
+  },
+  {
+   "repeat": 2,
+   "fold": 0,
+   "fit_s": 0.8803727650010842,
+   "pred_s": 0.06586249199972372,
+   "pickle_mb": 0.283588,
+   "auc": 0.9111830635118306,
+   "logloss": 0.10654009133577347,
+   "info": {
+    "use_vos": false,
+    "epochs": 14,
+    "vos_steps": 0
+   }
+  },
+  {
+   "repeat": 2,
+   "fold": 1,
+   "fit_s": 0.8480750990020169,
+   "pred_s": 0.06197813100152416,
+   "pickle_mb": 0.283588,
+   "auc": 0.9309402241594021,
+   "logloss": 0.09378235042095184,
+   "info": {
+    "use_vos": false,
+    "epochs": 14,
+    "vos_steps": 0
+   }
+  },
+  {
+   "repeat": 2,
+   "fold": 2,
+   "fit_s": 0.6182452780012682,
+   "pred_s": 0.06816913399961777,
+   "pickle_mb": 0.283588,
+   "auc": 0.9314737657166033,
+   "logloss": 0.08981688320636749,
+   "info": {
+    "use_vos": false,
+    "epochs": 5,
+    "vos_steps": 0
+   }
+  }
+ ]
+}

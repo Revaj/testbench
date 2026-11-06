@@ -1,0 +1,133 @@
+{
+ "dataset": "customer_satisfaction_in_airline",
+ "variant": "MLP",
+ "task_id": 363628,
+ "splits": [
+  {
+   "repeat": 0,
+   "fold": 0,
+   "fit_s": 4.659142038999562,
+   "pred_s": 0.27469901099902927,
+   "pickle_mb": 0.097874,
+   "auc": 0.9902821666974795,
+   "logloss": 0.12497983127832413,
+   "info": {
+    "use_vos": false,
+    "epochs": 9,
+    "vos_steps": 0
+   }
+  },
+  {
+   "repeat": 0,
+   "fold": 1,
+   "fit_s": 6.89776744199844,
+   "pred_s": 0.2751588380015164,
+   "pickle_mb": 0.096622,
+   "auc": 0.9913346425206149,
+   "logloss": 0.12132202833890915,
+   "info": {
+    "use_vos": false,
+    "epochs": 17,
+    "vos_steps": 0
+   }
+  },
+  {
+   "repeat": 0,
+   "fold": 2,
+   "fit_s": 5.783542437999131,
+   "pred_s": 0.25786787399920286,
+   "pickle_mb": 0.0985,
+   "auc": 0.9900867305717292,
+   "logloss": 0.12799665331840515,
+   "info": {
+    "use_vos": false,
+    "epochs": 12,
+    "vos_steps": 0
+   }
+  },
+  {
+   "repeat": 1,
+   "fold": 0,
+   "fit_s": 5.997429783998086,
+   "pred_s": 0.25085223900168785,
+   "pickle_mb": 0.099126,
+   "auc": 0.9901978514770797,
+   "logloss": 0.12939505279064178,
+   "info": {
+    "use_vos": false,
+    "epochs": 13,
+    "vos_steps": 0
+   }
+  },
+  {
+   "repeat": 1,
+   "fold": 1,
+   "fit_s": 6.324910276998708,
+   "pred_s": 0.2780341799989401,
+   "pickle_mb": 0.097874,
+   "auc": 0.9907520527487758,
+   "logloss": 0.1227613016963005,
+   "info": {
+    "use_vos": false,
+    "epochs": 13,
+    "vos_steps": 0
+   }
+  },
+  {
+   "repeat": 1,
+   "fold": 2,
+   "fit_s": 7.0478587270008575,
+   "pred_s": 0.2777559919995838,
+   "pickle_mb": 0.099126,
+   "auc": 0.9910314411892588,
+   "logloss": 0.12182556837797165,
+   "info": {
+    "use_vos": false,
+    "epochs": 15,
+    "vos_steps": 0
+   }
+  },
+  {
+   "repeat": 2,
+   "fold": 0,
+   "fit_s": 5.455288700002711,
+   "pred_s": 0.27080177000243566,
+   "pickle_mb": 0.099126,
+   "auc": 0.9904885140169534,
+   "logloss": 0.12832185626029968,
+   "info": {
+    "use_vos": false,
+    "epochs": 11,
+    "vos_steps": 0
+   }
+  },
+  {
+   "repeat": 2,
+   "fold": 1,
+   "fit_s": 6.2972645059999195,
+   "pred_s": 0.2680522210030176,
+   "pickle_mb": 0.097874,
+   "auc": 0.9910530376226816,
+   "logloss": 0.11851724982261658,
+   "info": {
+    "use_vos": false,
+    "epochs": 13,
+    "vos_steps": 0
+   }
+  },
+  {
+   "repeat": 2,
+   "fold": 2,
+   "fit_s": 7.086379348002083,
+   "pred_s": 0.26784018900070805,
+   "pickle_mb": 0.099126,
+   "auc": 0.9910997728751793,
+   "logloss": 0.12593457102775574,
+   "info": {
+    "use_vos": false,
+    "epochs": 15,
+    "vos_steps": 0
+   }
+  }
+ ]
+}

@@ -1,0 +1,133 @@
+{
+ "dataset": "seismic-bumps",
+ "variant": "MLP",
+ "task_id": 363700,
+ "splits": [
+  {
+   "repeat": 0,
+   "fold": 0,
+   "fit_s": 0.6076016129991331,
+   "pred_s": 0.012137219000578625,
+   "pickle_mb": 0.071757,
+   "auc": 0.7437506810504523,
+   "logloss": 0.21706421673297882,
+   "info": {
+    "use_vos": false,
+    "epochs": 48,
+    "vos_steps": 0
+   }
+  },
+  {
+   "repeat": 0,
+   "fold": 1,
+   "fit_s": 0.3416170529999363,
+   "pred_s": 0.013079935000860132,
+   "pickle_mb": 0.071757,
+   "auc": 0.7046362023070097,
+   "logloss": 0.2365638017654419,
+   "info": {
+    "use_vos": false,
+    "epochs": 20,
+    "vos_steps": 0
+   }
+  },
+  {
+   "repeat": 0,
+   "fold": 2,
+   "fit_s": 0.2839802320013405,
+   "pred_s": 0.012542235999717377,
+   "pickle_mb": 0.071757,
+   "auc": 0.7423627476651828,
+   "logloss": 0.21984310448169708,
+   "info": {
+    "use_vos": false,
+    "epochs": 15,
+    "vos_steps": 0
+   }
+  },
+  {
+   "repeat": 1,
+   "fold": 0,
+   "fit_s": 0.5791347810009029,
+   "pred_s": 0.011698172998876544,
+   "pickle_mb": 0.071757,
+   "auc": 0.7320039228506048,
+   "logloss": 0.26070958375930786,
+   "info": {
+    "use_vos": false,
+    "epochs": 44,
+    "vos_steps": 0
+   }
+  },
+  {
+   "repeat": 1,
+   "fold": 1,
+   "fit_s": 0.17094870200162404,
+   "pred_s": 0.012716187000478385,
+   "pickle_mb": 0.071757,
+   "auc": 0.8041038154392192,
+   "logloss": 0.20259886980056763,
+   "info": {
+    "use_vos": false,
+    "epochs": 5,
+    "vos_steps": 0
+   }
+  },
+  {
+   "repeat": 1,
+   "fold": 2,
+   "fit_s": 0.15480659300010302,
+   "pred_s": 0.01185234600052354,
+   "pickle_mb": 0.071757,
+   "auc": 0.7392860260102994,
+   "logloss": 0.23141607642173767,
+   "info": {
+    "use_vos": false,
+    "epochs": 5,
+    "vos_steps": 0
+   }
+  },
+  {
+   "repeat": 2,
+   "fold": 0,
+   "fit_s": 0.23711820099924807,
+   "pred_s": 0.012296557000809116,
+   "pickle_mb": 0.071757,
+   "auc": 0.7496131633431405,
+   "logloss": 0.2142598032951355,
+   "info": {
+    "use_vos": false,
+    "epochs": 12,
+    "vos_steps": 0
+   }
+  },
+  {
+   "repeat": 2,
+   "fold": 1,
+   "fit_s": 0.16363833699870156,
+   "pred_s": 0.012126962003094377,
+   "pickle_mb": 0.071757,
+   "auc": 0.7318988464951198,
+   "logloss": 0.22316324710845947,
+   "info": {
+    "use_vos": false,
+    "epochs": 5,
+    "vos_steps": 0
+   }
+  },
+  {
+   "repeat": 2,
+   "fold": 2,
+   "fit_s": 0.1782578639977146,
+   "pred_s": 0.013698334998480277,
+   "pickle_mb": 0.071757,
+   "auc": 0.7677402461377324,
+   "logloss": 0.21439142525196075,
+   "info": {
+    "use_vos": false,
+    "epochs": 5,
+    "vos_steps": 0
+   }
+  }
+ ]
+}

@@ -1,0 +1,133 @@
+{
+ "dataset": "bank-marketing",
+ "variant": "MLP",
+ "task_id": 363618,
+ "splits": [
+  {
+   "repeat": 0,
+   "fold": 0,
+   "fit_s": 2.8913159990006534,
+   "pred_s": 0.05667314099991927,
+   "pickle_mb": 0.067722,
+   "auc": 0.7617016858406468,
+   "logloss": 0.31506186723709106,
+   "info": {
+    "use_vos": false,
+    "epochs": 14,
+    "vos_steps": 0
+   }
+  },
+  {
+   "repeat": 0,
+   "fold": 1,
+   "fit_s": 3.6902812409971375,
+   "pred_s": 0.05201891999968211,
+   "pickle_mb": 0.067722,
+   "auc": 0.74176633564847,
+   "logloss": 0.3166761100292206,
+   "info": {
+    "use_vos": false,
+    "epochs": 18,
+    "vos_steps": 0
+   }
+  },
+  {
+   "repeat": 0,
+   "fold": 2,
+   "fit_s": 3.7903953319982975,
+   "pred_s": 0.05823600700023235,
+   "pickle_mb": 0.067722,
+   "auc": 0.7384422649366645,
+   "logloss": 0.31942763924598694,
+   "info": {
+    "use_vos": false,
+    "epochs": 18,
+    "vos_steps": 0
+   }
+  },
+  {
+   "repeat": 1,
+   "fold": 0,
+   "fit_s": 4.018251386001793,
+   "pred_s": 0.058888905001367675,
+   "pickle_mb": 0.067722,
+   "auc": 0.7429098980632687,
+   "logloss": 0.3161412477493286,
+   "info": {
+    "use_vos": false,
+    "epochs": 18,
+    "vos_steps": 0
+   }
+  },
+  {
+   "repeat": 1,
+   "fold": 1,
+   "fit_s": 3.7232765709995874,
+   "pred_s": 0.059557897999184206,
+   "pickle_mb": 0.067722,
+   "auc": 0.751604832192474,
+   "logloss": 0.31438302993774414,
+   "info": {
+    "use_vos": false,
+    "epochs": 18,
+    "vos_steps": 0
+   }
+  },
+  {
+   "repeat": 1,
+   "fold": 2,
+   "fit_s": 2.1681785460023093,
+   "pred_s": 0.05865197900129715,
+   "pickle_mb": 0.067722,
+   "auc": 0.742230951506423,
+   "logloss": 0.3193979561328888,
+   "info": {
+    "use_vos": false,
+    "epochs": 9,
+    "vos_steps": 0
+   }
+  },
+  {
+   "repeat": 2,
+   "fold": 0,
+   "fit_s": 1.2810562459999346,
+   "pred_s": 0.05757751599958283,
+   "pickle_mb": 0.067722,
+   "auc": 0.7436163168329525,
+   "logloss": 0.3174341022968292,
+   "info": {
+    "use_vos": false,
+    "epochs": 5,
+    "vos_steps": 0
+   }
+  },
+  {
+   "repeat": 2,
+   "fold": 1,
+   "fit_s": 1.204138861001411,
+   "pred_s": 0.054567598999710754,
+   "pickle_mb": 0.067722,
+   "auc": 0.7413935347040979,
+   "logloss": 0.3172817826271057,
+   "info": {
+    "use_vos": false,
+    "epochs": 5,
+    "vos_steps": 0
+   }
+  },
+  {
+   "repeat": 2,
+   "fold": 2,
+   "fit_s": 1.1548248440012685,
+   "pred_s": 0.05760170799840125,
+   "pickle_mb": 0.067722,
+   "auc": 0.7439901405957424,
+   "logloss": 0.31796783208847046,
+   "info": {
+    "use_vos": false,
+    "epochs": 5,
+    "vos_steps": 0
+   }
+  }
+ ]
+}
