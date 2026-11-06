@@ -91,6 +91,11 @@ Genera en `results/`:
 | `por_receta.csv` | El promedio de esas tres métricas por receta |
 | `resumen_recetas.png` | Gráfica de AUC, fit y pickle por receta |
 | `auc_por_dataset.png` | Mapa de calor de AUC por dataset y receta |
+| `nuevas_recetas.png` | **Aparte:** AUC, fit y pickle de kNN y ExtraTrees (azul) frente a R1, LR-SMOTE y RF (gris) |
+| `efecto_smote_y_pesos.png` | **Aparte:** diferencia de ROC-AUC por dataset de KNN-SMOTE − KNN y ET-BAL − ET, con media, IC 95 % y gana–pierde |
+
+Las dos gráficas principales solo incluyen las recetas anteriores, así que no cambian al agregar kNN y
+ExtraTrees; las de esas recetas salen aparte y solo se generan cuando hay resultados de ellas.
 
 Solo entran las variantes que tienen resultados en `results/raw/`, así que se puede agregar con corridas
 parciales. Las comparaciones pareadas (por ejemplo `KNN-SMOTE` vs `KNN`, `ET-BAL` vs `ET`) se calculan solo

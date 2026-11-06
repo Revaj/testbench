@@ -107,14 +107,17 @@ def fmt_ci(r, digits=4):
     return (f"{r['mean']:+.{digits}f} [{r['lo']:+.{digits}f}, {r['hi']:+.{digits}f}] | {r['wins']}–{r['losses']} | {sig}")
 
 
-def charts(rec, pdd, variants, out):
-    import matplotlib
-    matplotlib.use("Agg")
-    import matplotlib.pyplot as plt
-    ink, ink2, muted, grid, base, surf = "#0b0b0b", "#52514e", "#898781", "#e1e0d9", "#c3c2b7", "#fcfcfb"
-    blue = "#2a78d6"
-    plt.rcParams.update({"font.size": 10, "axes.edgecolor": base, "axes.labelcolor": ink2, "xtick.color": muted,
-                         "ytick.color": ink2, "figure.facecolor": surf, "axes.facecolor": surf})
+INK, INK2, MUTED, GRID, BASE, SURF, BLUE, RED = "#0b0b0b", "#52514e", "#898781", "#e1e0d9", "#c3c2b7", "#fcfcfb", "#2a78d6", "#e34948"
+
+
+def _style(plt):
+    plt.rcParams.update({"font.size": 10, "axes.edgecolor": BASE, "axes.labelcolor": INK2, "xtick.color": MUTED,
+                         "ytick.color": INK2, "figure.facecolor": SURF, "axes.facecolor": SURF})
+
+
+def bar_panels(plt, rec, variants, path, refs=(), suptitle=None):
+    """Tres paneles (ROC-AUC, fit, pickle) por receta; las de `refs` van en gris como referencia."""
+    ink, ink2, muted, grid, base, surf, blue = INK, INK2, MUTED, GRID, BASE, SURF, BLUE
     labels = [LABEL.get(v, v) for v in variants]
     panels = [("auc", "ROC-AUC medio (38 datasets)", "{:.4f}", None),
               ("fit_s", "Fit medio por partición (s)", "{:.1f} s", None),
@@ -134,7 +137,8 @@ def charts(rec, pdd, variants, out):
         else:
             hi = vals.max() * 1.3
         shown = np.minimum(vals, hi * 0.97)
-        ax.barh(y, shown, height=0.6, color=np.where(partial, "#a9c8f0", blue), edgecolor=surf, linewidth=2)
+        ref = np.array([v in refs for v in variants])
+        ax.barh(y, shown, height=0.6, color=np.where(ref, base, np.where(partial, "#a9c8f0", blue)), edgecolor=surf, linewidth=2)
         ax.set_xlim(lo, hi)
         for v, yi, val, sv, pa in zip(variants, y, vals, shown, partial):
             txt = "  " + f.format(val) + (" →" if sv < val else "") + (f"  ({int(rec.loc[v, 'datasets'])} de {int(rec['datasets'].max())})" if pa and col == "auc" else "")
@@ -150,9 +154,21 @@ def charts(rec, pdd, variants, out):
         ax.tick_params(axis="y", length=0)
         ax.set_yticks(np.arange(len(variants))[::-1])
         ax.set_yticklabels(labels)
+    if suptitle:
+        fig.suptitle(suptitle, x=0.01, ha="left", color=ink, fontsize=12)
     fig.tight_layout()
-    fig.savefig(out / "resumen_recetas.png", dpi=160)
+    fig.savefig(path, dpi=160)
     plt.close(fig)
+
+
+def charts(rec, pdd, variants, out):
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    ink, ink2, surf = INK, INK2, SURF
+    _style(plt)
+    labels = [LABEL.get(v, v) for v in variants]
+    bar_panels(plt, rec, variants, out / "resumen_recetas.png")
 
     # AUC por dataset: diferencia contra la mejor receta de ese dataset (0 = la mejor)
     M = pdd.pivot(index="dataset", columns="variant", values="auc")[variants]
@@ -187,6 +203,62 @@ def charts(rec, pdd, variants, out):
     fig.tight_layout()
     fig.savefig(out / "auc_por_dataset.png", dpi=160)
     plt.close(fig)
+
+
+NEW = ["KNN-SMOTE", "KNN", "ET-BAL", "ET"]          # recetas nuevas: van en gráficas aparte
+NEW_REFS = ["R1", "LR-SMOTE", "RF"]                 # referencias en gris dentro de esas gráficas
+NEW_PAIRS = [("KNN-SMOTE", "KNN", "¿SMOTE ayuda a kNN?"), ("ET-BAL", "ET", "¿Pesos balanceados ayudan a ExtraTrees?")]
+
+
+def charts_new(rec, auc, pdd, out):
+    """nuevas_recetas.png (promedios contra referencias) y efecto_smote_y_pesos.png (diferencia pareada por dataset)."""
+    present = [v for v in NEW if v in rec.index]
+    if not present:
+        return []
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    _style(plt)
+    made = ["nuevas_recetas.png"]
+    bar_panels(plt, rec, present + [v for v in NEW_REFS if v in rec.index], out / "nuevas_recetas.png",
+               refs=NEW_REFS, suptitle="kNN y ExtraTrees (azul) frente a recetas anteriores (gris)")
+    pairs = [(a, b, t) for a, b, t in NEW_PAIRS if a in auc and b in auc and (auc[a] - auc[b]).notna().any()]
+    if not pairs:
+        return made
+    n_of = pdd.drop_duplicates("dataset").set_index("dataset").n
+    order = n_of.loc[auc.index].sort_values().index
+    fig, axes = plt.subplots(1, len(pairs), figsize=(6.2 * len(pairs) + 2.6, 0.27 * len(order) + 2.2), sharey=True,
+                             squeeze=False)
+    for ax, (a, b, title) in zip(axes[0], pairs):
+        d = (auc[a] - auc[b]).loc[order]
+        y = np.arange(len(order))[::-1]
+        ok = d.notna().to_numpy()
+        vals = d.fillna(0).to_numpy()
+        lim = max(0.01, float(np.nanmax(np.abs(d)))) * 1.15 if ok.any() else 0.01
+        ax.barh(y[ok], vals[ok], height=0.62, color=np.where(vals[ok] >= 0, BLUE, RED), edgecolor=SURF, linewidth=1)
+        for yi in y[~ok]:
+            ax.text(0, yi, "sin resultado", ha="center", va="center", fontsize=7, color=MUTED, zorder=3,
+                    bbox=dict(boxstyle="square,pad=0.15", facecolor=SURF, edgecolor="none"))
+        ax.axvline(0, color=INK2, linewidth=1)
+        ax.set_xlim(-lim, lim)
+        r = paired(auc, a, b)
+        sub = (f"media {r['mean']:+.4f} [{r['lo']:+.4f}, {r['hi']:+.4f}] · gana–pierde {r['wins']}–{r['losses']} · "
+               f"{r['n']} datasets") if r else ""
+        ax.set_title(f"{title}\n{LABEL.get(a, a)} − {LABEL.get(b, b)} (ROC-AUC)\n{sub}", color=INK, fontsize=10, loc="left")
+        ax.text(lim * 0.97, len(order) - 0.3, "mejor con " + LABEL.get(a, a) + " →", ha="right", va="bottom", fontsize=8, color=BLUE)
+        ax.text(-lim * 0.97, len(order) - 0.3, "← mejor sin", ha="left", va="bottom", fontsize=8, color=RED)
+        ax.grid(axis="x", color=GRID, linewidth=0.8)
+        ax.set_axisbelow(True)
+        for sp in ("top", "right", "left"):
+            ax.spines[sp].set_visible(False)
+        ax.tick_params(axis="y", length=0)
+        ax.set_ylim(-0.7, len(order) + 0.6)
+    axes[0][0].set_yticks(np.arange(len(order))[::-1])
+    axes[0][0].set_yticklabels([f"{x} (n={int(n_of[x]):,})" for x in order], fontsize=8)
+    fig.tight_layout()
+    fig.savefig(out / "efecto_smote_y_pesos.png", dpi=160)
+    plt.close(fig)
+    return made + ["efecto_smote_y_pesos.png"]
 
 
 def main():
@@ -314,8 +386,11 @@ def main():
         for (v, d), g in errs.groupby(["variant", "dataset"]):
             L.append(f"- {LABEL.get(v, v)} en {d}: {len(g)} partición(es) — `{g.error.iloc[0][:200]}`")
     L.append("\n![Promedios por receta](resumen_recetas.png)\n\n![ROC-AUC por dataset](auc_por_dataset.png)\n")
+    main_v = [v for v in variants if v not in NEW]
+    charts(rec, pdd[pdd.variant.isin(main_v)], main_v, out)
+    for png in charts_new(rec, auc, pdd, out):
+        L.append(f"![Recetas nuevas]({png})\n")
     (out / "summary.md").write_text("\n".join(L) + "\n")
-    charts(rec, pdd, variants, out)
     print("\n".join(L[:len(variants) + 6]))
 
 

@@ -66,6 +66,8 @@ python bench/validate_data.py         # 38/38 válidos
 bash bench/run_all.sh                 # todas las variantes, reanudable; luego genera results/
 ```
 
+Al correr KNN, KNN-SMOTE, ET y ET-BAL, `aggregate.py` genera dos gráficas aparte
+(`results/nuevas_recetas.png` y `results/efecto_smote_y_pesos.png`) sin tocar las de arriba.
 Instructivo completo, paso a paso (correr solo algunas variantes, reanudar, agregar y leer resultados):
 [`BENCHMARK.md`](BENCHMARK.md).
 
