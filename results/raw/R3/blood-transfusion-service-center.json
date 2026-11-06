@@ -1,0 +1,147 @@
+{
+ "dataset": "blood-transfusion-service-center",
+ "variant": "R3",
+ "task_id": 363621,
+ "splits": [
+  {
+   "repeat": 0,
+   "fold": 0,
+   "fit_s": 3.824054024000361,
+   "pred_s": 0.04074354200020025,
+   "pickle_mb": 1.181027,
+   "auc": 0.745701754385965,
+   "logloss": 0.48475820624708416,
+   "branch_auc": {
+    "lin": 0.7456140350877192,
+    "hgb": 0.6537280701754387,
+    "et": 0.6824561403508772,
+    "mlp_vos": 0.6693859649122806
+   },
+   "info": {
+    "variant": "R1",
+    "bases": [
+     "lin",
+     "hgb",
+     "et",
+     "mlp_vos"
+    ],
+    "oof_rows": 498,
+    "folds": 5,
+    "meta": true,
+    "pickle_bytes": 1181007
+   }
+  },
+  {
+   "repeat": 0,
+   "fold": 1,
+   "fit_s": 6.290579836000688,
+   "pred_s": 0.0408371650000845,
+   "pickle_mb": 1.171563,
+   "auc": 0.7801962533452275,
+   "logloss": 0.45888111163768514,
+   "branch_auc": {
+    "lin": 0.7774754683318466,
+    "hgb": 0.7020517395182871,
+    "et": 0.7624888492417484,
+    "mlp_vos": 0.7955396966993755
+   },
+   "info": {
+    "variant": "R1",
+    "bases": [
+     "lin",
+     "hgb",
+     "et",
+     "mlp_vos"
+    ],
+    "oof_rows": 499,
+    "folds": 5,
+    "meta": true,
+    "pickle_bytes": 1171543
+   }
+  },
+  {
+   "repeat": 0,
+   "fold": 2,
+   "fit_s": 5.5973960309993345,
+   "pred_s": 0.02814331200079323,
+   "pickle_mb": 1.165452,
+   "auc": 0.7123104371097235,
+   "logloss": 0.4968346876538246,
+   "branch_auc": {
+    "lin": 0.7317127564674398,
+    "hgb": 0.6756467439785905,
+    "et": 0.6862622658340767,
+    "mlp_vos": 0.7012488849241748
+   },
+   "info": {
+    "variant": "R1",
+    "bases": [
+     "lin",
+     "hgb",
+     "et",
+     "mlp_vos"
+    ],
+    "oof_rows": 499,
+    "folds": 5,
+    "meta": true,
+    "pickle_bytes": 1165432
+   }
+  },
+  {
+   "repeat": 1,
+   "fold": 0,
+   "fit_s": 6.2959164909998435,
+   "pred_s": 0.028339655000308994,
+   "pickle_mb": 1.105507,
+   "auc": 0.7292105263157895,
+   "logloss": 0.4924242458572655,
+   "branch_auc": {
+    "lin": 0.7335526315789473,
+    "hgb": 0.6575877192982457,
+    "et": 0.7002631578947369,
+    "mlp_vos": 0.7206140350877193
+   },
+   "info": {
+    "variant": "R1",
+    "bases": [
+     "lin",
+     "hgb",
+     "et",
+     "mlp_vos"
+    ],
+    "oof_rows": 498,
+    "folds": 5,
+    "meta": true,
+    "pickle_bytes": 1105487
+   }
+  },
+  {
+   "repeat": 1,
+   "fold": 1,
+   "fit_s": 4.331423362999885,
+   "pred_s": 0.041183620000083465,
+   "pickle_mb": 1.164474,
+   "auc": 0.7405441570026762,
+   "logloss": 0.4830391769788077,
+   "branch_auc": {
+    "lin": 0.7499107939339875,
+    "hgb": 0.7113737734165924,
+    "et": 0.7229259589652096,
+    "mlp_vos": 0.6807314897413024
+   },
+   "info": {
+    "variant": "R1",
+    "bases": [
+     "lin",
+     "hgb",
+     "et",
+     "mlp_vos"
+    ],
+    "oof_rows": 499,
+    "folds": 5,
+    "meta": true,
+    "pickle_bytes": 1164454
+   }
+  }
+ ]
+}

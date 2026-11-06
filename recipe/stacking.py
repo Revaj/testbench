@@ -29,7 +29,7 @@ import pandas as pd
 from sklearn.base import BaseEstimator, ClassifierMixin, TransformerMixin, clone
 from sklearn.compose import ColumnTransformer
 from sklearn.ensemble import ExtraTreesClassifier, HistGradientBoostingClassifier
-from sklearn.feature_selection import f_classif
+from sklearn.feature_selection import f_classif, mutual_info_classif
 from sklearn.impute import SimpleImputer
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import StratifiedKFold, train_test_split
@@ -291,20 +291,30 @@ class HGBBase(_PriorFallback, BaseEstimator):
     Preprocesamiento propio: numéricas tal cual (los faltantes los maneja el modelo), categóricas como
     categóricas NATIVAS (las 254 más frecuentes por columna + 'otras'); las de más de 254 valores además
     con target encoding con validación cruzada y log de frecuencia. Sin escalado (los árboles no lo necesitan).
-    Con más de 256 columnas numéricas usa las 256 de mayor F de ANOVA (calculada solo con estas filas)."""
+    Con más de 256 columnas en total usa 256 (calculado solo con estas filas): reparte el cupo entre numéricas y
+    categóricas en proporción a cuántas hay, y elige las numéricas por F de ANOVA y las categóricas por
+    información mutua. Con muchas columnas el HGB es lento y su binning pesa en el pickle."""
 
     NATIVE_MAX = 254
     HC_MAX_CATS = 2_000
-    MAX_NUM_FEATS = 256
+    MAX_NUM_FEATS = 256   # tope total de columnas de entrada
 
     def fit(self, X, y, K, budget=2_500_000, iter_cap=None):
         num, cat = _raw_types(X)
-        if len(num) > self.MAX_NUM_FEATS:
+        if len(num) + len(cat) > self.MAX_NUM_FEATS and cat:
+            n_cat = int(round(self.MAX_NUM_FEATS * len(cat) / (len(num) + len(cat))))
+            if len(cat) > n_cat:
+                names = list(cat)
+                C = np.column_stack([pd.factorize(X[c], use_na_sentinel=True)[0] for c in names])
+                mi = mutual_info_classif(C, y, discrete_features=True, random_state=SEED)
+                keep = set(names[i] for i in np.argsort(-mi, kind="stable")[:n_cat])
+                cat = {c: k for c, k in cat.items() if c in keep}
+        if len(num) > self.MAX_NUM_FEATS - len(cat):
             A = X[num].to_numpy(dtype=np.float32)
             med = np.nan_to_num(np.nanmedian(A, axis=0))
             A = np.where(np.isnan(A), med[None, :], A)
             score = np.nan_to_num(f_classif(A, y)[0], nan=0.0, posinf=0.0)
-            num = [num[i] for i in np.sort(np.argsort(-score, kind="stable")[: self.MAX_NUM_FEATS])]
+            num = [num[i] for i in np.sort(np.argsort(-score, kind="stable")[: self.MAX_NUM_FEATS - len(cat)])]
         high = [c for c, k in cat.items() if k > self.NATIVE_MAX]
         parts = []
         if num:

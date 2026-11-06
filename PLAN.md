@@ -224,6 +224,14 @@ legacy/
      (activo vs. inactivo). Sin señal aprendible en estos datos tal como se descargaron; posible problema del dataset o
      de la descarga, sin verificar. Se reporta aparte.
 
+- 2026-11-06: Con la tanda 1 completa (R1, MLP-VOS, LR-SMOTE × 594 particiones, 0 errores), hiva_agnostic quedó como
+  peor caso de tiempo de R1: 89 s de fit medio (103 s máx.), por encima de la guía de ~60 s. Causa: 1,617 columnas
+  categóricas. Ajuste por límite de tiempo (no por AUC): el HGB ahora usa a lo más 256 columnas EN TOTAL (antes el tope
+  era solo para numéricas), repartiendo el cupo y eligiendo categóricas por información mutua (en el fold). Solo cambia
+  hiva_agnostic (único dataset con > 256 columnas que incluyen categóricas); Bioresponse da exactamente el mismo AUC.
+  hiva baja a ~64 s, todavía al límite: se reporta como riesgo. Se probó vectorizar los codificadores (idénticos en los
+  38 datasets) pero era más lento en datasets largos; se descartó. Se re-corre R1 solo en hiva_agnostic.
+
 ## Fuentes
 
 - TabArena: A Living Benchmark for Machine Learning on Tabular Data — https://arxiv.org/abs/2506.16791
