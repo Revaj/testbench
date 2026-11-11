@@ -170,7 +170,7 @@ def charts(rec, pdd, variants, out):
     labels = [LABEL.get(v, v) for v in variants]
     bar_panels(plt, rec, variants, out / "resumen_recetas.png")
 
-    # AUC por dataset. Color = cuánto le falta a la mejor receta de ese dataset: claro = la mejor, rojo = lejos.
+    # AUC por dataset. Color = qué tan cerca está de la mejor receta de ese dataset: azul fuerte = la mejor, claro = lejos.
     # La mejor de cada dataset (o las empatadas a 3 decimales) va en negritas y con recuadro.
     from matplotlib.colors import LinearSegmentedColormap
     from matplotlib.patches import Rectangle
@@ -181,7 +181,9 @@ def charts(rec, pdd, variants, out):
     R = M.round(3).to_numpy()
     best = R == np.nanmax(R, axis=1, keepdims=True)    # igual que los números que se muestran
     worst = 0.10
-    cmap = LinearSegmentedColormap.from_list("falta", [surf, "#fbd9d3", "#f08a7e", RED, "#8f1d1c"])
+    # Casi todas las brechas son chicas: el azul se aclara rápido para que solo las cercanas a la mejor queden fuertes.
+    cmap = LinearSegmentedColormap.from_list("cerca", [(0, "#1d5bb0"), (0.12, "#4f8fe0"), (0.35, "#a9c8f0"),
+                                                        (0.7, "#e2ecf9"), (1, surf)])
     cmap.set_bad(GRID)
     fig, ax = plt.subplots(figsize=(1.05 * len(variants) + 4, 0.3 * len(M) + 2.2))
     im = ax.imshow(-G.to_numpy(), aspect="auto", cmap=cmap, vmin=0, vmax=worst)
@@ -192,9 +194,9 @@ def charts(rec, pdd, variants, out):
                 ax.text(j, i, "error", ha="center", va="center", fontsize=7, color=ink2, style="italic")
                 continue
             if best[i, j]:
-                ax.add_patch(Rectangle((j - 0.47, i - 0.42), 0.94, 0.84, fill=False, edgecolor=ink, linewidth=1.2))
+                ax.add_patch(Rectangle((j - 0.47, i - 0.42), 0.94, 0.84, fill=False, edgecolor=ink, linewidth=1.6))
             ax.text(j, i, f"{v:.3f}", ha="center", va="center", fontsize=7,
-                    color="#ffffff" if -G.iat[i, j] > 0.055 else ink, fontweight="bold" if best[i, j] else "normal")
+                    color="#ffffff" if -G.iat[i, j] < 0.012 else ink, fontweight="bold" if best[i, j] else "normal")
     wins = np.nan_to_num(best, nan=False).sum(axis=0)
     ax.set_xticks(range(len(variants)))
     ax.set_xticklabels([f"{lab}\nmejor o empatada en {int(w)}" for lab, w in zip(labels, wins)], rotation=30, ha="right", color=ink2)
@@ -205,10 +207,11 @@ def charts(rec, pdd, variants, out):
         sp.set_visible(False)
     cb = fig.colorbar(im, ax=ax, fraction=0.025, pad=0.01, ticks=[0, 0.025, 0.05, 0.075, worst])
     cb.ax.set_yticklabels(["0 · la mejor", "0.025", "0.050", "0.075", f"≥ {worst:.2f}"])
+    cb.ax.invert_yaxis()                               # arriba (azul fuerte) = la mejor
     cb.set_label("ROC-AUC que le falta para igualar a la mejor receta del dataset", color=ink2)
     cb.outline.set_visible(False)
     ax.set_title("ROC-AUC por dataset. Negritas con recuadro = la mejor receta de ese dataset (o empatada a 3 decimales).\n"
-                 "Entre más rojo, más lejos de la mejor; blanco = la mejor o casi empatada. Gris = la receta falló.",
+                 "Entre más fuerte el azul, mejor le fue (más cerca de la mejor); claro = lejos de la mejor. Gris = la receta falló.",
                  color=ink, fontsize=11, loc="left")
     fig.tight_layout()
     fig.savefig(out / "auc_por_dataset.png", dpi=160)

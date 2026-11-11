@@ -90,7 +90,7 @@ Genera en `results/`:
 | `por_dataset.csv` | Por receta y dataset: ROC-AUC, tamaño de pickle y tiempo de fit (promedio de sus particiones) |
 | `por_receta.csv` | El promedio de esas tres métricas por receta |
 | `resumen_recetas.png` | Gráfica de AUC, fit y pickle por receta |
-| `auc_por_dataset.png` | AUC por dataset y receta: la mejor de cada dataset en negritas con recuadro; entre más rojo, más lejos de la mejor |
+| `auc_por_dataset.png` | AUC por dataset y receta: la mejor de cada dataset en negritas con recuadro; entre más fuerte el azul, más cerca de la mejor |
 | `nuevas_recetas.png` | **Aparte:** AUC, fit y pickle de kNN y ExtraTrees (azul) frente a R1, LR-SMOTE y RF (gris) |
 | `efecto_smote_y_pesos.png` | **Aparte:** diferencia de ROC-AUC por dataset de KNN-SMOTE − KNN y ET-BAL − ET, con media, IC 95 % y gana–pierde |
 
