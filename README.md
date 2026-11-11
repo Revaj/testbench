@@ -17,18 +17,21 @@ datos crudos por partición en `results/raw/`.
 
 ![Promedios por receta](results/resumen_recetas.png)
 
-| Receta | ROC-AUC medio | Fit medio | Fit máx. | Pickle medio | Pickle máx. | Errores |
+| Receta | ROC-AUC medio | Fit total | Fit máx. | Pickle medio | Pickle máx. | Errores |
 |---|---|---|---|---|---|---|
-| **Stacking (R1)** | **0.8527** | 7.5 s | 67.1 s | 1.41 MB | 4.21 MB | 0 |
-| MLP-VOS | 0.8348 | 2.6 s | 33.4 s | 0.18 MB | 0.88 MB | 0 |
-| Logística + SMOTE | 0.8122 | 3.0 s | 56.6 s | 0.06 MB | 0.72 MB | 0 |
-| Stacking + MLP-VOS (R3) | 0.8523 | 15.4 s | 91.4 s | 1.58 MB | 4.35 MB | 0 |
-| Stacking + MLP sin VOS (R2) | 0.8525 | 13.4 s | 87.4 s | 1.58 MB | 4.35 MB | 0 |
-| Stacking + LR-SMOTE (R4, demostrativa) | 0.8520 | 15.4 s | 145.9 s | 1.45 MB | 4.50 MB | 0 |
-| Promedio simple de las 3 bases | 0.8493 | 1.9 s | 13.9 s | 1.41 MB | 4.21 MB | 0 |
-| MLP sin VOS | 0.8352 | 2.0 s | 29.7 s | 0.18 MB | 0.88 MB | 0 |
-| Receta original (R0, referencia) | 0.8591 en 33 datasets* | 5.8 s | 64.0 s | 1.01 MB | 3.30 MB | 66 particiones (5 datasets) |
-| Random forest por defecto (referencia) | 0.8328 | 1.8 s | 26.1 s | 19.11 MB | 106.33 MB | 0 |
+| **Stacking (R1)** | **0.8527** | 58 min | 67.1 s | 1.41 MB | 4.21 MB | 0 |
+| MLP-VOS | 0.8348 | 17 min | 33.4 s | 0.18 MB | 0.88 MB | 0 |
+| Logística + SMOTE | 0.8122 | 18 min | 56.6 s | 0.06 MB | 0.72 MB | 0 |
+| Stacking + MLP-VOS (R3) | 0.8523 | 119 min | 91.4 s | 1.58 MB | 4.35 MB | 0 |
+| Stacking + MLP sin VOS (R2) | 0.8525 | 102 min | 87.4 s | 1.58 MB | 4.35 MB | 0 |
+| Stacking + LR-SMOTE (R4, demostrativa) | 0.8520 | 109 min | 145.9 s | 1.45 MB | 4.50 MB | 0 |
+| Promedio simple de las 3 bases | 0.8493 | 14 min | 13.9 s | 1.41 MB | 4.21 MB | 0 |
+| MLP sin VOS | 0.8352 | 13 min | 29.7 s | 0.18 MB | 0.88 MB | 0 |
+| Receta original (R0, referencia) | 0.8591 en 33 datasets* | 32 min (33 datasets) | 64.0 s | 1.01 MB | 3.30 MB | 66 particiones (5 datasets) |
+| Random forest por defecto (referencia) | 0.8328 | 11 min | 26.1 s | 19.11 MB | 106.33 MB | 0 |
+
+"Fit total" = suma del tiempo de fit de las 594 particiones (lo que tarda la receta en todo el benchmark, sin
+predicción ni carga de datos); "Fit máx." = la partición más lenta, que es la que importa para el límite de 5 min.
 
 \* La receta original falla con `window shape cannot be larger than input array shape` en Marketing_Campaign,
 seismic-bumps, coil2000_insurance_policies, in_vehicle_coupon_recommendation y bank-marketing; su promedio no es

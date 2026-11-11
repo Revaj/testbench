@@ -86,10 +86,10 @@ Genera en `results/`:
 
 | Archivo | Contenido |
 |---|---|
-| `summary.md` | Tabla principal (AUC media, fit medio y peor, pickle medio y peor, errores), Elo con IC bootstrap y comparaciones pareadas con IC 95 % |
+| `summary.md` | Tabla principal (AUC media, fit total y peor, pickle medio y peor, errores), Elo con IC bootstrap y comparaciones pareadas con IC 95 % |
 | `por_dataset.csv` | Por receta y dataset: ROC-AUC, tamaño de pickle y tiempo de fit (promedio de sus particiones) |
-| `por_receta.csv` | El promedio de esas tres métricas por receta |
-| `resumen_recetas.png` | Gráfica de AUC, fit y pickle por receta |
+| `por_receta.csv` | Por receta: ROC-AUC medio, fit total (suma de todas las particiones), fit máximo y pickle medio |
+| `resumen_recetas.png` | Gráfica de AUC medio, fit total y pickle medio por receta |
 | `auc_por_dataset.png` | AUC por dataset y receta: la mejor de cada dataset en negritas con recuadro; entre más fuerte el azul, más cerca de la mejor |
 | `nuevas_recetas.png` | **Aparte:** AUC, fit y pickle de kNN y ExtraTrees (azul) frente a R1, LR-SMOTE y RF (gris) |
 | `efecto_smote_y_pesos.png` | **Aparte:** diferencia de ROC-AUC por dataset de KNN-SMOTE − KNN y ET-BAL − ET, con media, IC 95 % y gana–pierde |
