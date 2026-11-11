@@ -1,9 +1,11 @@
 # testbench
 
-Tres recetas de clasificación tabular (solo NumPy, pandas y scikit-learn; Python 3.11, scikit-learn ≥ 1.4)
+Recetas de clasificación tabular (solo NumPy, pandas y scikit-learn; Python 3.11, scikit-learn ≥ 1.4)
 para evaluarse con una réplica manual del protocolo de TabArena-v0.1 (38 tareas de clasificación).
+Las tres principales (stacking, MLP-VOS y logística + SMOTE) ya están evaluadas; kNN + SMOTE y ExtraTrees
+balanceado están implementadas y probadas con datos sintéticos, pero aún no corren en el benchmark.
 
-**Estado: evaluado en los 38 datasets de clasificación de TabArena-v0.1 con sus particiones oficiales
+**Estado: las tres recetas principales y sus controles, evaluados en los 38 datasets de clasificación de TabArena-v0.1 con sus particiones oficiales
 (594 particiones por receta).** Resultados completos: [`results/summary.md`](results/summary.md). Plan completo, decisiones y bitácora: [`PLAN.md`](PLAN.md).
 
 ## Resultados (TabArena-v0.1, clasificación)
@@ -32,6 +34,17 @@ datos crudos por partición en `results/raw/`.
 seismic-bumps, coil2000_insurance_policies, in_vehicle_coupon_recommendation y bank-marketing; su promedio no es
 comparable. En los 33 datasets donde todas terminan, el stacking da 0.8630 y la original 0.8591.
 
+**Error conocido del cargador (pendiente de corregir).** En esos 5 datasets y en HR_Analytics hay columnas de texto
+que OpenML marca como `string`; `fetch_data.py` las anota como `numeric` en el esquema y `run.py` las convierte a
+número, así que se vuelven NaN (seismic-bumps: `ghazard`; bank-marketing: `poutcome`; coil2000: `avgAge` y otra;
+in_vehicle_coupon: `coupon`; Marketing_Campaign: `Dt_Customer`; HR_Analytics: los valores ">20" y "<1" de
+`experience`). Los archivos descargados están bien; el error es solo de la etiqueta. Consecuencias:
+- Todas las recetas se evaluaron en esos 6 datasets sin esas 1–2 variables. La comparación entre recetas es justa
+  (a todas les faltó lo mismo), pero los ROC-AUC absolutos ahí probablemente están algo bajos.
+- La receta original truena porque le queda una columna 100 % vacía en el entrenamiento y no la descarta; con datos
+  bien cargados probablemente no fallaría. El stacking sí descarta esas columnas.
+- Arreglo previsto: tratar como categórica toda columna con texto no numérico y volver a correr esos 6 datasets.
+
 **Comparaciones pareadas** (diferencia media de ROC-AUC por dataset, IC 95 % por bootstrap):
 
 | Comparación | Diferencia [IC 95 %] | Gana–pierde | Lectura |
@@ -55,6 +68,12 @@ comparable. En los 33 datasets donde todas terminan, el stacking da 0.8630 y la 
   (1,617 columnas categóricas); R3 a 91 s y R4 a 146 s. El random forest de referencia pasa de 5 MB.
 - hiva_agnostic: ninguna receta aprende (ROC-AUC ≈ 0.45–0.51), tampoco modelos simples con validación cruzada.
   Sin verificar si es el dataset o la descarga.
+
+**Cómo leer la gráfica por dataset:** cada cuadro es el ROC-AUC de una receta en un dataset. Entre más fuerte el
+azul, más cerca está de la mejor receta de ese dataset; claro, lejos. La mejor de cada dataset (o las empatadas a 3
+decimales) va en negritas con recuadro, y bajo cada receta se indica en cuántos datasets fue la mejor o empató. Gris
+= la receta falló. Se ve, por ejemplo, que Logística + SMOTE es la columna más clara (más lejos de la mejor) y que
+los stackings son los más azules.
 
 ![ROC-AUC por dataset](results/auc_por_dataset.png)
 

@@ -255,3 +255,9 @@ legacy/
 
 - TabArena: A Living Benchmark for Machine Learning on Tabular Data — https://arxiv.org/abs/2506.16791
 - VOS: Learning What You Don't Know by Virtual Outlier Synthesis (Du et al., ICLR 2022) — https://arxiv.org/abs/2202.01197
+- Error del cargador encontrado al revisar por qué falla R0: columnas `string` de OpenML quedaron como `numeric` en el
+  esquema y `run.py` las volvió NaN (6 datasets: seismic-bumps, bank-marketing, coil2000, in_vehicle_coupon,
+  Marketing_Campaign, HR_Analytics). Afecta a todas las recetas por igual; R0 truena porque no descarta la columna
+  vacía. **Pendiente:** corregir el cargador y volver a correr esos 6 datasets.
+- Gráfica por dataset rediseñada para leerse al derecho: azul más fuerte = más cerca de la mejor receta; la mejor
+  (o empatada a 3 decimales) en negritas con recuadro. Mismos números.
