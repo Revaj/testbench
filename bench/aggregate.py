@@ -306,6 +306,7 @@ def main():
         # Fit total = suma del tiempo de fit de todas las particiones que terminaron (lo que tarda correr la receta en
         # todo el benchmark); las que fallaron no suman.
         "fit_total_min": df[df.error.isna()].groupby("variant").fit_s.sum() / 60, "fit_max": pdd.groupby("variant").fit_max.max(),
+        "fit_tipico": pdd.groupby("variant").fit_s.median(),   # un entrenamiento en un dataset típico (mediana)
         "pickle_mb": pdd.groupby("variant").pickle_mb.mean(), "pickle_max": pdd.groupby("variant").pickle_max.max(),
         "errors": pdd.groupby("variant").errors.sum(),
     }).loc[variants]
@@ -332,16 +333,19 @@ def main():
     L.append("## Promedio por receta\n")
     L.append("\"Datasets\" = datasets con resultado; si una receta falla en alguno, sus promedios son sobre los que sí "
              "terminó (ver Errores), así que no son directamente comparables con los de 38.\n")
-    L.append("\"Fit total\" = suma del tiempo de fit de todas las particiones que terminaron (lo que tarda la receta en "
-             "todo el benchmark, sin contar predicción ni carga de datos); \"Fit máx.\" = la partición más lenta.\n")
+    L.append("Tiempos: el protocolo de TabArena entrena cada dataset varias veces (una por partición), así que hay tres "
+             "lecturas. \"Fit típico\" = un entrenamiento en un dataset típico (mediana entre datasets del fit promedio "
+             "de cada uno): lo que tarda un uso normal. \"Fit máx.\" = el entrenamiento más lento de todo el benchmark: "
+             "el peor caso, el que se compara con el límite por dataset. \"Fit total\" = suma de todas las particiones "
+             "que terminaron: lo que tarda correr el benchmark completo (sin predicción ni carga de datos).\n")
     L.append(f"La columna \"AUC {len(common)} comunes\" promedia solo los datasets donde todas las recetas terminaron, "
              "para comparar en igualdad de condiciones.\n")
     L.append(f"| Receta | Datasets | ROC-AUC medio | AUC {len(common)} comunes | AUC binarios | AUC multiclase | Log-loss multiclase | Rango medio (AUC) | "
-             "Gana | Fit total | Fit máx. | Pickle medio | Pickle máx. | Errores |")
-    L.append("|---|---|---|---|---|---|---|---|---|---|---|---|---|---|")
+             "Gana | Fit típico | Fit máx. | Fit total | Pickle medio | Pickle máx. | Errores |")
+    L.append("|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|")
     for v, r in rec.iterrows():
         L.append(f"| {LABEL.get(v, v)} | {int(r.datasets)} | **{r.auc:.4f}** | {r.auc_comunes:.4f} | {r.auc_bin:.4f} | {r.auc_multi:.4f} | "
-                 f"{r.logloss_multi:.4f} | {r.rank_auc:.2f} | {int(r.wins_auc)} | {r.fit_total_min:.1f} min | {r.fit_max:.1f} s | "
+                 f"{r.logloss_multi:.4f} | {r.rank_auc:.2f} | {int(r.wins_auc)} | {r.fit_tipico:.1f} s | {r.fit_max:.1f} s | {r.fit_total_min:.1f} min | "
                  f"{r.pickle_mb:.2f} MB | {r.pickle_max:.2f} MB | {int(r.errors)} |")
     if "elo_auc" in rec:
         L.append("\n## Elo (Bradley-Terry por dataset, RF = 1000, IC 95 % por bootstrap)\n")

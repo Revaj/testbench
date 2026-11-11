@@ -6,22 +6,22 @@ Datasets: 38 (30 binarios, 8 multiclase). Métricas por dataset = promedio sobre
 
 "Datasets" = datasets con resultado; si una receta falla en alguno, sus promedios son sobre los que sí terminó (ver Errores), así que no son directamente comparables con los de 38.
 
-"Fit total" = suma del tiempo de fit de todas las particiones que terminaron (lo que tarda la receta en todo el benchmark, sin contar predicción ni carga de datos); "Fit máx." = la partición más lenta.
+Tiempos: el protocolo de TabArena entrena cada dataset varias veces (una por partición), así que hay tres lecturas. "Fit típico" = un entrenamiento en un dataset típico (mediana entre datasets del fit promedio de cada uno): lo que tarda un uso normal. "Fit máx." = el entrenamiento más lento de todo el benchmark: el peor caso, el que se compara con el límite por dataset. "Fit total" = suma de todas las particiones que terminaron: lo que tarda correr el benchmark completo (sin predicción ni carga de datos).
 
 La columna "AUC 33 comunes" promedia solo los datasets donde todas las recetas terminaron, para comparar en igualdad de condiciones.
 
-| Receta | Datasets | ROC-AUC medio | AUC 33 comunes | AUC binarios | AUC multiclase | Log-loss multiclase | Rango medio (AUC) | Gana | Fit total | Fit máx. | Pickle medio | Pickle máx. | Errores |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| Stacking (R1) | 38 | **0.8527** | 0.8630 | 0.8420 | 0.8924 | 0.2731 | 3.47 | 3 | 58.0 min | 67.1 s | 1.41 MB | 4.21 MB | 0 |
-| MLP-VOS | 38 | **0.8348** | 0.8474 | 0.8247 | 0.8729 | 0.3287 | 7.53 | 0 | 17.3 min | 33.4 s | 0.18 MB | 0.88 MB | 0 |
-| Logística + SMOTE | 38 | **0.8122** | 0.8236 | 0.8013 | 0.8531 | 0.4318 | 8.92 | 1 | 17.8 min | 56.6 s | 0.06 MB | 0.72 MB | 0 |
-| Stacking + MLP-VOS (R3) | 38 | **0.8523** | 0.8626 | 0.8430 | 0.8873 | 0.2793 | 3.03 | 7 | 119.4 min | 91.4 s | 1.58 MB | 4.35 MB | 0 |
-| Stacking + MLP (R2) | 38 | **0.8525** | 0.8627 | 0.8431 | 0.8880 | 0.2795 | 2.84 | 9 | 101.5 min | 87.4 s | 1.58 MB | 4.35 MB | 0 |
-| Stacking + LR-SMOTE (R4) | 38 | **0.8520** | 0.8622 | 0.8418 | 0.8901 | 0.2772 | 3.76 | 4 | 109.4 min | 145.9 s | 1.45 MB | 4.50 MB | 0 |
-| Promedio 3 bases | 38 | **0.8493** | 0.8598 | 0.8390 | 0.8876 | 0.3202 | 4.95 | 8 | 13.9 min | 13.9 s | 1.41 MB | 4.21 MB | 0 |
-| MLP sin VOS | 38 | **0.8352** | 0.8476 | 0.8251 | 0.8735 | 0.3286 | 7.50 | 0 | 12.8 min | 29.7 s | 0.18 MB | 0.88 MB | 0 |
-| Receta original (R0) | 33 | **0.8591** | 0.8591 | 0.8487 | 0.8915 | 0.2927 | 5.12 | 2 | 32.0 min | 64.0 s | 1.01 MB | 3.30 MB | 66 |
-| Random forest (ref.) | 38 | **0.8328** | 0.8455 | 0.8186 | 0.8862 | 0.4412 | 7.24 | 4 | 11.3 min | 26.1 s | 19.11 MB | 106.33 MB | 0 |
+| Receta | Datasets | ROC-AUC medio | AUC 33 comunes | AUC binarios | AUC multiclase | Log-loss multiclase | Rango medio (AUC) | Gana | Fit típico | Fit máx. | Fit total | Pickle medio | Pickle máx. | Errores |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| Stacking (R1) | 38 | **0.8527** | 0.8630 | 0.8420 | 0.8924 | 0.2731 | 3.47 | 3 | 3.7 s | 67.1 s | 58.0 min | 1.41 MB | 4.21 MB | 0 |
+| MLP-VOS | 38 | **0.8348** | 0.8474 | 0.8247 | 0.8729 | 0.3287 | 7.53 | 0 | 1.3 s | 33.4 s | 17.3 min | 0.18 MB | 0.88 MB | 0 |
+| Logística + SMOTE | 38 | **0.8122** | 0.8236 | 0.8013 | 0.8531 | 0.4318 | 8.92 | 1 | 0.2 s | 56.6 s | 17.8 min | 0.06 MB | 0.72 MB | 0 |
+| Stacking + MLP-VOS (R3) | 38 | **0.8523** | 0.8626 | 0.8430 | 0.8873 | 0.2793 | 3.03 | 7 | 9.2 s | 91.4 s | 119.4 min | 1.58 MB | 4.35 MB | 0 |
+| Stacking + MLP (R2) | 38 | **0.8525** | 0.8627 | 0.8431 | 0.8880 | 0.2795 | 2.84 | 9 | 7.6 s | 87.4 s | 101.5 min | 1.58 MB | 4.35 MB | 0 |
+| Stacking + LR-SMOTE (R4) | 38 | **0.8520** | 0.8622 | 0.8418 | 0.8901 | 0.2772 | 3.76 | 4 | 4.7 s | 145.9 s | 109.4 min | 1.45 MB | 4.50 MB | 0 |
+| Promedio 3 bases | 38 | **0.8493** | 0.8598 | 0.8390 | 0.8876 | 0.3202 | 4.95 | 8 | 0.8 s | 13.9 s | 13.9 min | 1.41 MB | 4.21 MB | 0 |
+| MLP sin VOS | 38 | **0.8352** | 0.8476 | 0.8251 | 0.8735 | 0.3286 | 7.50 | 0 | 1.0 s | 29.7 s | 12.8 min | 0.18 MB | 0.88 MB | 0 |
+| Receta original (R0) | 33 | **0.8591** | 0.8591 | 0.8487 | 0.8915 | 0.2927 | 5.12 | 2 | 1.6 s | 64.0 s | 32.0 min | 1.01 MB | 3.30 MB | 66 |
+| Random forest (ref.) | 38 | **0.8328** | 0.8455 | 0.8186 | 0.8862 | 0.4412 | 7.24 | 4 | 0.4 s | 26.1 s | 11.3 min | 19.11 MB | 106.33 MB | 0 |
 
 ## Elo (Bradley-Terry por dataset, RF = 1000, IC 95 % por bootstrap)
 

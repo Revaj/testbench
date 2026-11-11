@@ -17,21 +17,32 @@ datos crudos por partición en `results/raw/`.
 
 ![Promedios por receta](results/resumen_recetas.png)
 
-| Receta | ROC-AUC medio | Fit total | Fit máx. | Pickle medio | Pickle máx. | Errores |
-|---|---|---|---|---|---|---|
-| **Stacking (R1)** | **0.8527** | 58 min | 67.1 s | 1.41 MB | 4.21 MB | 0 |
-| MLP-VOS | 0.8348 | 17 min | 33.4 s | 0.18 MB | 0.88 MB | 0 |
-| Logística + SMOTE | 0.8122 | 18 min | 56.6 s | 0.06 MB | 0.72 MB | 0 |
-| Stacking + MLP-VOS (R3) | 0.8523 | 119 min | 91.4 s | 1.58 MB | 4.35 MB | 0 |
-| Stacking + MLP sin VOS (R2) | 0.8525 | 102 min | 87.4 s | 1.58 MB | 4.35 MB | 0 |
-| Stacking + LR-SMOTE (R4, demostrativa) | 0.8520 | 109 min | 145.9 s | 1.45 MB | 4.50 MB | 0 |
-| Promedio simple de las 3 bases | 0.8493 | 14 min | 13.9 s | 1.41 MB | 4.21 MB | 0 |
-| MLP sin VOS | 0.8352 | 13 min | 29.7 s | 0.18 MB | 0.88 MB | 0 |
-| Receta original (R0, referencia) | 0.8591 en 33 datasets* | 32 min (33 datasets) | 64.0 s | 1.01 MB | 3.30 MB | 66 particiones (5 datasets) |
-| Random forest por defecto (referencia) | 0.8328 | 11 min | 26.1 s | 19.11 MB | 106.33 MB | 0 |
+| Receta | ROC-AUC medio | Fit típico | Fit máx. | Fit total | Pickle medio | Pickle máx. | Errores |
+|---|---|---|---|---|---|---|---|
+| **Stacking (R1)** | **0.8527** | 3.7 s | 67.1 s | 58 min | 1.41 MB | 4.21 MB | 0 |
+| MLP-VOS | 0.8348 | 1.3 s | 33.4 s | 17 min | 0.18 MB | 0.88 MB | 0 |
+| Logística + SMOTE | 0.8122 | 0.2 s | 56.6 s | 18 min | 0.06 MB | 0.72 MB | 0 |
+| Stacking + MLP-VOS (R3) | 0.8523 | 9.2 s | 91.4 s | 119 min | 1.58 MB | 4.35 MB | 0 |
+| Stacking + MLP sin VOS (R2) | 0.8525 | 7.6 s | 87.4 s | 102 min | 1.58 MB | 4.35 MB | 0 |
+| Stacking + LR-SMOTE (R4, demostrativa) | 0.8520 | 4.7 s | 145.9 s | 109 min | 1.45 MB | 4.50 MB | 0 |
+| Promedio simple de las 3 bases | 0.8493 | 0.8 s | 13.9 s | 14 min | 1.41 MB | 4.21 MB | 0 |
+| MLP sin VOS | 0.8352 | 1.0 s | 29.7 s | 13 min | 0.18 MB | 0.88 MB | 0 |
+| Receta original (R0, referencia) | 0.8591 en 33 datasets* | 1.6 s | 64.0 s | 32 min (33 datasets) | 1.01 MB | 3.30 MB | 66 particiones (5 datasets) |
+| Random forest por defecto (referencia) | 0.8328 | 0.4 s | 26.1 s | 11 min | 19.11 MB | 106.33 MB | 0 |
 
-"Fit total" = suma del tiempo de fit de las 594 particiones (lo que tarda la receta en todo el benchmark, sin
-predicción ni carga de datos); "Fit máx." = la partición más lenta, que es la que importa para el límite de 5 min.
+**Cómo leer los tiempos.** TabArena no entrena cada receta una vez por dataset: para que el resultado no dependa
+de una sola partición, entrena varias veces con distintas divisiones train/test (30 veces en los 12 datasets de
+menos de 2,500 filas y 9 veces en los otros 26: 594 entrenamientos por receta). Por eso hay tres tiempos:
+- **Fit típico:** un entrenamiento en un dataset típico (mediana entre los 38). Es lo que tarda un uso normal:
+  entrenar la receta una vez sobre un dataset.
+- **Fit máx.:** el entrenamiento más lento de todo el benchmark. Es el peor caso esperado para un dataset y el que
+  se compara con el límite del reto (5 min por dataset). R1 llega a 67 s en hiva_agnostic (3,845 filas × 1,617
+  columnas); el siguiente es kddcup09_appetency con 28 s. Si el servidor fuera ~5× más lento, hiva_agnostic quedaría
+  cerca o arriba del límite; los demás con holgura.
+- **Fit total:** la suma de los 594 entrenamientos. Es lo que tarda correr el benchmark completo para esa receta, no
+  lo que tarda un uso normal. Si se entrenara una sola vez por dataset, R1 tardaría ~4.7 min para los 38.
+
+Todos sin contar predicción ni carga de datos, en un contenedor de 2 CPU.
 
 \* La receta original falla con `window shape cannot be larger than input array shape` en Marketing_Campaign,
 seismic-bumps, coil2000_insurance_policies, in_vehicle_coupon_recommendation y bank-marketing; su promedio no es

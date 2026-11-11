@@ -71,6 +71,10 @@ bash bench/run_all.sh                   # DATA=otra/carpeta bash bench/run_all.s
 
 ### Cuánto tarda
 
+El protocolo entrena cada dataset varias veces (30 en los de menos de 2,500 filas, 9 en el resto: 594 entrenamientos
+por receta), así que correr el benchmark tarda mucho más que usar la receta una vez. Para el tiempo de un uso normal
+mira "Fit típico" y para el peor caso "Fit máx." en `results/summary.md`.
+
 Suma de fit + predict en las 594 particiones, en un sandbox de 2 CPU (sin contar carga de datos ni pickle):
 R1 ≈ 1.0 h, R2 ≈ 1.7 h, R4 ≈ 1.9 h, R3 ≈ 2.0 h, R0 ≈ 0.6 h; LR-SMOTE, MLP, MLP-VOS, R1-AVG y RF ≈ 0.2–0.3 h
 cada una. kNN y ExtraTrees aún no se han corrido; por las pruebas sintéticas deberían quedar en el grupo rápido.
@@ -86,9 +90,9 @@ Genera en `results/`:
 
 | Archivo | Contenido |
 |---|---|
-| `summary.md` | Tabla principal (AUC media, fit total y peor, pickle medio y peor, errores), Elo con IC bootstrap y comparaciones pareadas con IC 95 % |
+| `summary.md` | Tabla principal (AUC media; fit típico, máximo y total; pickle medio y peor, errores), Elo con IC bootstrap y comparaciones pareadas con IC 95 % |
 | `por_dataset.csv` | Por receta y dataset: ROC-AUC, tamaño de pickle y tiempo de fit (promedio de sus particiones) |
-| `por_receta.csv` | Por receta: ROC-AUC medio, fit total (suma de todas las particiones), fit máximo y pickle medio |
+| `por_receta.csv` | Por receta: ROC-AUC medio, fit típico (un entrenamiento en un dataset típico), fit máximo, fit total (suma de todas las particiones) y pickle medio |
 | `resumen_recetas.png` | Gráfica de AUC medio, fit total y pickle medio por receta |
 | `auc_por_dataset.png` | AUC por dataset y receta: la mejor de cada dataset en negritas con recuadro; entre más fuerte el azul, más cerca de la mejor |
 | `nuevas_recetas.png` | **Aparte:** AUC, fit y pickle de kNN y ExtraTrees (azul) frente a R1, LR-SMOTE y RF (gris) |
