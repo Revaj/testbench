@@ -170,35 +170,45 @@ def charts(rec, pdd, variants, out):
     labels = [LABEL.get(v, v) for v in variants]
     bar_panels(plt, rec, variants, out / "resumen_recetas.png")
 
-    # AUC por dataset: diferencia contra la mejor receta de ese dataset (0 = la mejor)
+    # AUC por dataset. Color = cuánto le falta a la mejor receta de ese dataset: claro = la mejor, rojo = lejos.
+    # La mejor de cada dataset (o las empatadas a 3 decimales) va en negritas y con recuadro.
+    from matplotlib.colors import LinearSegmentedColormap
+    from matplotlib.patches import Rectangle
     M = pdd.pivot(index="dataset", columns="variant", values="auc")[variants]
     order = pdd.drop_duplicates("dataset").set_index("dataset").loc[M.index].sort_values("n").index
     M = M.loc[order]
     G = M.sub(M.max(axis=1), axis=0)
-    fig, ax = plt.subplots(figsize=(1.05 * len(variants) + 4, 0.3 * len(M) + 1.8))
-    from matplotlib.colors import LinearSegmentedColormap
-    cmap = LinearSegmentedColormap.from_list("gap", ["#0d3b7a", "#2a78d6", "#a9c8f0", surf])
-    vmin = min(-0.05, float(np.nanmin(G.to_numpy())))
-    im = ax.imshow(G.to_numpy(), aspect="auto", cmap=cmap, vmin=max(vmin, -0.1), vmax=0)
+    R = M.round(3).to_numpy()
+    best = R == np.nanmax(R, axis=1, keepdims=True)    # igual que los números que se muestran
+    worst = 0.10
+    cmap = LinearSegmentedColormap.from_list("falta", [surf, "#fbd9d3", "#f08a7e", RED, "#8f1d1c"])
+    cmap.set_bad(GRID)
+    fig, ax = plt.subplots(figsize=(1.05 * len(variants) + 4, 0.3 * len(M) + 2.2))
+    im = ax.imshow(-G.to_numpy(), aspect="auto", cmap=cmap, vmin=0, vmax=worst)
     for i in range(M.shape[0]):
         for j in range(M.shape[1]):
             v = M.iat[i, j]
             if np.isnan(v):
-                ax.text(j, i, "error", ha="center", va="center", fontsize=7, color="#e34948")
+                ax.text(j, i, "error", ha="center", va="center", fontsize=7, color=ink2, style="italic")
                 continue
-            dark = G.iat[i, j] < -0.04
-            ax.text(j, i, f"{v:.3f}", ha="center", va="center", fontsize=7, color="#ffffff" if dark else ink)
+            if best[i, j]:
+                ax.add_patch(Rectangle((j - 0.47, i - 0.42), 0.94, 0.84, fill=False, edgecolor=ink, linewidth=1.2))
+            ax.text(j, i, f"{v:.3f}", ha="center", va="center", fontsize=7,
+                    color="#ffffff" if -G.iat[i, j] > 0.055 else ink, fontweight="bold" if best[i, j] else "normal")
+    wins = np.nan_to_num(best, nan=False).sum(axis=0)
     ax.set_xticks(range(len(variants)))
-    ax.set_xticklabels(labels, rotation=30, ha="right", color=ink2)
+    ax.set_xticklabels([f"{lab}\nmejor o empatada en {int(w)}" for lab, w in zip(labels, wins)], rotation=30, ha="right", color=ink2)
     ax.set_yticks(range(len(M)))
     ax.set_yticklabels([f"{d} (n={int(pdd[pdd.dataset == d].n.iloc[0]):,})" for d in M.index], fontsize=8)
     ax.tick_params(length=0)
-    for s in ax.spines.values():
-        s.set_visible(False)
-    cb = fig.colorbar(im, ax=ax, fraction=0.025, pad=0.01)
-    cb.set_label("ROC-AUC menos el mejor del dataset", color=ink2)
+    for sp in ax.spines.values():
+        sp.set_visible(False)
+    cb = fig.colorbar(im, ax=ax, fraction=0.025, pad=0.01, ticks=[0, 0.025, 0.05, 0.075, worst])
+    cb.ax.set_yticklabels(["0 · la mejor", "0.025", "0.050", "0.075", f"≥ {worst:.2f}"])
+    cb.set_label("ROC-AUC que le falta para igualar a la mejor receta del dataset", color=ink2)
     cb.outline.set_visible(False)
-    ax.set_title("ROC-AUC por dataset (números) y distancia a la mejor receta de ese dataset (color)",
+    ax.set_title("ROC-AUC por dataset. Negritas con recuadro = la mejor receta de ese dataset (o empatada a 3 decimales).\n"
+                 "Entre más rojo, más lejos de la mejor; blanco = la mejor o casi empatada. Gris = la receta falló.",
                  color=ink, fontsize=11, loc="left")
     fig.tight_layout()
     fig.savefig(out / "auc_por_dataset.png", dpi=160)
